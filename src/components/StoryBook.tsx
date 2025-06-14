@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Play, BookOpen } from 'lucide-react';
 import { type QuantumLevel } from '@/data/quantumLevels';
 import { getIllustrationComponent } from '@/components/SVGIllustrations';
-import { getStoryQuestions, getStoryContent, type StoryQuestion } from '@/utils/storyQuestions';
+import { getEnhancedTheoryContent } from '@/utils/theoryContent';
 
 interface StoryPage {
   id: number;
@@ -13,8 +13,7 @@ interface StoryPage {
   content: string;
   illustration: string;
   concept: string;
-  hasQuestions?: boolean;
-  questions?: StoryQuestion[];
+  isTheoryPage?: boolean;
 }
 
 interface StoryBookProps {
@@ -26,15 +25,10 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
   const [bookOpened, setBookOpened] = useState(false);
-  const [showQuestions, setShowQuestions] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [showExplanation, setShowExplanation] = useState(false);
 
-  // Generate story pages with enhanced content
+  // Generate story pages with enhanced theory content
   const generateStoryPages = (level: QuantumLevel): StoryPage[] => {
-    const challengeQuestions = getStoryQuestions(level.id);
-    const enhancedStory = getStoryContent(level);
+    const enhancedTheory = getEnhancedTheoryContent(level);
     
     const pages: StoryPage[] = [
       {
@@ -47,23 +41,22 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
       {
         id: 2,
         title: "The Quantum Tale Unfolds",
-        content: `${enhancedStory}\n\n${level.storyText}\n\nNow, let us delve deeper into the quantum principles that govern this realm...`,
+        content: `${level.storyText}\n\nNow, let us delve deeper into the quantum principles that govern this realm...`,
         illustration: getAdvancedIllustrationKey(level.concept),
         concept: level.concept
       },
       {
         id: 3,
-        title: "Test Your Quantum Knowledge",
-        content: "Before you face the final challenge, the Quantum Masters want to test your understanding. Answer these questions to prove your readiness for battle!",
-        illustration: "quantum_knowledge_test",
-        concept: "Knowledge Test",
-        hasQuestions: true,
-        questions: challengeQuestions
+        title: `Mastering ${level.concept}`,
+        content: enhancedTheory,
+        illustration: getAdvancedIllustrationKey(level.concept),
+        concept: "Detailed Theory",
+        isTheoryPage: true
       },
       {
         id: 4,
         title: "Ready for the Quantum Battle",
-        content: `Excellent! You have proven your mastery of ${level.concept}. You are now ready to face the Quantum Villain in the ${level.gameType} challenge.\n\nRemember: Every aspect of your upcoming battle relates directly to the concepts you've just learned. Trust in your quantum wisdom!`,
+        content: `Excellent! You have absorbed the deep knowledge of ${level.concept}. You are now ready to face the Quantum Villain in the ${level.gameType} challenge.\n\nRemember: Every aspect of your upcoming battle relates directly to the concepts you've just learned. Trust in your quantum wisdom and apply the theoretical foundations you've mastered!`,
         illustration: "quantum_battle_ready",
         concept: "Final Preparation"
       }
@@ -80,28 +73,6 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   }, []);
 
   const handleNextPage = () => {
-    const currentPageData = storyPages[currentPage];
-    
-    if (currentPageData?.hasQuestions && !showQuestions) {
-      setShowQuestions(true);
-      return;
-    }
-    
-    if (showQuestions) {
-      const questions = currentPageData?.questions || [];
-      if (currentQuestionIndex < questions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-        setSelectedAnswer(null);
-        setShowExplanation(false);
-        return;
-      } else {
-        setShowQuestions(false);
-        setCurrentQuestionIndex(0);
-        setSelectedAnswer(null);
-        setShowExplanation(false);
-      }
-    }
-    
     if (currentPage < totalPages - 1 && !isFlipping) {
       setIsFlipping(true);
       setTimeout(() => {
@@ -112,21 +83,6 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   };
 
   const handlePrevPage = () => {
-    if (showQuestions) {
-      if (currentQuestionIndex > 0) {
-        setCurrentQuestionIndex(currentQuestionIndex - 1);
-        setSelectedAnswer(null);
-        setShowExplanation(false);
-        return;
-      } else {
-        setShowQuestions(false);
-        setCurrentQuestionIndex(0);
-        setSelectedAnswer(null);
-        setShowExplanation(false);
-        return;
-      }
-    }
-    
     if (currentPage > 0 && !isFlipping) {
       setIsFlipping(true);
       setTimeout(() => {
@@ -136,18 +92,12 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
     }
   };
 
-  const handleAnswerSelect = (answerIndex: number) => {
-    setSelectedAnswer(answerIndex);
-    setShowExplanation(true);
-  };
-
   const handleStartChallenge = () => {
     setBookOpened(false);
     setTimeout(onComplete, 800);
   };
 
   const currentPageData = storyPages[currentPage];
-  const currentQuestion = currentPageData?.questions?.[currentQuestionIndex];
 
   // Render the appropriate illustration component
   const renderIllustration = (illustrationKey: string | undefined) => {
@@ -217,54 +167,10 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                 </div>
               </div>
 
-              {/* Right Page - Text Content or Questions */}
+              {/* Right Page - Enhanced Content */}
               <div className="w-1/2 p-6 relative overflow-hidden">
-                {showQuestions && currentQuestion ? (
-                  // Question Mode
-                  <div className="h-full flex flex-col animate-fade-in">
-                    <h3 className="text-lg font-bold text-amber-900 mb-4 text-center">
-                      Question {currentQuestionIndex + 1} of {currentPageData?.questions?.length}
-                    </h3>
-                    
-                    <div className="flex-1 space-y-4">
-                      <p className="text-amber-800 font-medium mb-4">
-                        {currentQuestion.question}
-                      </p>
-                      
-                      <div className="space-y-2">
-                        {currentQuestion.options.map((option, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleAnswerSelect(index)}
-                            disabled={selectedAnswer !== null}
-                            className={`w-full p-3 text-left rounded-lg border-2 transition-all duration-300 ease-out transform hover:scale-102 ${
-                              selectedAnswer === null
-                                ? 'border-amber-300 hover:border-amber-500 hover:bg-amber-50 hover:shadow-md'
-                                : selectedAnswer === index
-                                ? index === currentQuestion.correctAnswer
-                                  ? 'border-green-500 bg-green-50 text-green-800 scale-102'
-                                  : 'border-red-500 bg-red-50 text-red-800'
-                                : index === currentQuestion.correctAnswer
-                                ? 'border-green-500 bg-green-50 text-green-800'
-                                : 'border-gray-300 bg-gray-50 text-gray-600'
-                            }`}
-                          >
-                            {String.fromCharCode(65 + index)}. {option}
-                          </button>
-                        ))}
-                      </div>
-                      
-                      {showExplanation && (
-                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg animate-scale-in">
-                          <p className="text-blue-800 text-sm">
-                            <strong>Explanation:</strong> {currentQuestion.explanation}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : currentPage < totalPages - 1 ? (
-                  // Regular Page Content
+                {currentPage < totalPages - 1 ? (
+                  // Regular Page Content with Enhanced Theory
                   <div 
                     className={`transform transition-all duration-500 ease-out ${
                       isFlipping ? 'scale-95 opacity-50 translate-x-4' : 'scale-100 opacity-100 translate-x-0'
@@ -273,21 +179,30 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                     <h3 className="text-xl font-bold text-amber-900 mb-4 text-center border-b-2 border-amber-300 pb-2">
                       {currentPageData?.title}
                     </h3>
-                    <div className="text-amber-800 leading-relaxed text-sm space-y-3 overflow-y-auto max-h-80">
+                    <div className={`text-amber-800 leading-relaxed text-sm space-y-3 overflow-y-auto ${
+                      currentPageData?.isTheoryPage ? 'max-h-96' : 'max-h-80'
+                    }`}>
                       {currentPageData?.content.split('\n\n').map((paragraph, idx) => (
                         <p key={idx} className="text-justify animate-fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
                           {paragraph}
                         </p>
                       ))}
                     </div>
+                    
+                    {/* Enhanced Theory Page Indicator */}
+                    {currentPageData?.isTheoryPage && (
+                      <div className="absolute bottom-4 right-6 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">
+                        Theory Deep Dive
+                      </div>
+                    )}
                   </div>
                 ) : (
                   // Final Page
                   <div className="flex flex-col items-center justify-center h-full animate-fade-in">
                     <div className="text-center">
                       {renderIllustration("quantum_battle_ready")}
-                      <h3 className="text-xl font-bold text-amber-900 mb-4 mt-4">Ready to Test Your Quantum Knowledge?</h3>
-                      <p className="text-sm text-amber-700 mb-6">You've mastered all the concepts needed for this challenge!</p>
+                      <h3 className="text-xl font-bold text-amber-900 mb-4 mt-4">Ready to Apply Your Knowledge?</h3>
+                      <p className="text-sm text-amber-700 mb-6">You've mastered the theory. Now put it into practice!</p>
                       <Button
                         onClick={handleStartChallenge}
                         size="lg"
@@ -306,7 +221,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-4">
               <Button
                 onClick={handlePrevPage}
-                disabled={(currentPage === 0 && !showQuestions && currentQuestionIndex === 0) || isFlipping}
+                disabled={currentPage === 0 || isFlipping}
                 variant="outline"
                 size="sm"
                 className="border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -315,19 +230,12 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
               </Button>
               
               <span className="text-amber-700 font-medium">
-                {showQuestions 
-                  ? `Q${currentQuestionIndex + 1}/${currentPageData?.questions?.length || 0}` 
-                  : `${currentPage + 1} / ${totalPages}`
-                }
+                {currentPage + 1} / {totalPages}
               </span>
               
               <Button
                 onClick={handleNextPage}
-                disabled={
-                  (!showQuestions && currentPage >= totalPages - 1) || 
-                  (showQuestions && selectedAnswer === null) ||
-                  isFlipping
-                }
+                disabled={currentPage >= totalPages - 1 || isFlipping}
                 variant="outline"
                 size="sm"
                 className="border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -337,7 +245,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
             </div>
 
             <div className="absolute bottom-2 left-6 text-xs text-amber-600">
-              {showQuestions ? `Questions` : currentPage + 1}
+              Page {currentPage + 1}
             </div>
           </Card>
         </div>
