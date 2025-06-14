@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Star, BookOpen, Gamepad, Rocket, Layers } from 'lucide-react';
+import { Trophy, Star, BookOpen, Gamepad, Rocket, Layers, Map } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { GameHero } from '@/components/GameHero';
 import { LevelCard } from '@/components/LevelCard';
 import { StoryModal } from '@/components/StoryModal';
@@ -139,6 +140,30 @@ const Index = () => {
 
       {/* Main Game Content */}
       <div className="container mx-auto px-4 py-8">
+        {/* New Story Board Navigation */}
+        <Card className="mb-8 bg-gradient-to-r from-blue-900/30 to-purple-900/30 backdrop-blur-lg border-blue-500/20">
+          <CardHeader>
+            <CardTitle className="text-2xl text-white flex items-center gap-2">
+              <Map className="h-6 w-6 text-blue-400" />
+              100-Level Quantum Journey
+            </CardTitle>
+            <CardDescription className="text-gray-300">
+              Master quantum computing through 100 carefully crafted levels in our new story-driven learning experience!
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link to="/story-board">
+              <Button 
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold"
+              >
+                <Map className="h-5 w-5 mr-2" />
+                Start 100-Level Journey
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         {/* Progress Overview */}
         <Card className="mb-8 bg-black/20 backdrop-blur-lg border-purple-500/20">
           <CardHeader>
