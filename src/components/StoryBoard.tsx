@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Star, Trophy, BookOpen, Lock, CheckCircle, Circle, Plus, GridIcon, Heart, Home } from 'lucide-react';
 import { quantumLevels, chapters, type QuantumLevel, type Chapter } from '@/data/quantumLevels';
 import { LevelDetail } from '@/components/LevelDetail';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 interface StoryBoardProps {
   playerProgress: {
@@ -20,7 +21,11 @@ interface StoryBoardProps {
 
 export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelComplete }) => {
   const [selectedLevel, setSelectedLevel] = useState<QuantumLevel | null>(null);
-  const [selectedChapter, setSelectedChapter] = useState<number>(1);
+  const location = useLocation();
+  
+  // Get selected chapter from navigation state or default to 1
+  const initialChapter = location.state?.selectedChapter || 1;
+  const [selectedChapter, setSelectedChapter] = useState<number>(initialChapter);
 
   const getIconComponent = (iconName: string) => {
     const icons = {
@@ -55,6 +60,13 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
     const chapterLevels = quantumLevels.filter(level => level.chapter === chapter.id);
     const completedInChapter = chapterLevels.filter(level => isLevelCompleted(level.id)).length;
     return (completedInChapter / chapterLevels.length) * 100;
+  };
+
+  const isChapterUnlocked = (chapterIndex: number): boolean => {
+    if (chapterIndex === 0) return true;
+    // Chapter is unlocked if previous chapter has at least 80% completion
+    const prevChapter = chapters[chapterIndex - 1];
+    return getChapterProgress(prevChapter) >= 80;
   };
 
   const currentChapter = chapters.find(c => c.id === selectedChapter);
@@ -119,10 +131,10 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
 
         {/* Chapter Selection */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          {chapters.map((chapter) => {
+          {chapters.map((chapter, index) => {
             const IconComponent = getIconComponent(chapter.icon);
             const progress = getChapterProgress(chapter);
-            const isUnlocked = chapter.id === 1 || getChapterProgress(chapters[chapter.id - 2]) > 80;
+            const isUnlocked = isChapterUnlocked(index);
             
             return (
               <Card
@@ -136,7 +148,7 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
                 }`}
                 onClick={() => isUnlocked && setSelectedChapter(chapter.id)}
               >
-                <CardContent className="p-4 text-center">
+                <CardContent className="p-4 text-center relative">
                   {!isUnlocked && (
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center rounded-lg">
                       <Lock className="h-8 w-8 text-gray-400" />

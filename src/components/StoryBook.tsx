@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,13 @@ interface StoryPage {
   content: string;
   illustration: string;
   concept: string;
+  hasQuestions?: boolean;
+  questions?: Array<{
+    question: string;
+    options: string[];
+    correctAnswer: number;
+    explanation: string;
+  }>;
 }
 
 interface StoryBookProps {
@@ -21,104 +29,100 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
   const [bookOpened, setBookOpened] = useState(false);
+  const [showQuestions, setShowQuestions] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
 
-  // Generate more accurate challenge questions based on level concepts
+  // Generate enhanced challenge questions based on level concepts
   const getChallengeQuestions = (levelId: number) => {
-    const questionBank: Record<number, Array<{topic: string, explanation: string}>> = {
+    const questionBank: Record<number, Array<{
+      question: string;
+      options: string[];
+      correctAnswer: number;
+      explanation: string;
+    }>> = {
       1: [
         {
-          topic: "What is a Qubit?",
-          explanation: "A qubit is the fundamental unit of quantum information. Unlike classical bits that exist as either 0 or 1, qubits can exist in a superposition of both states simultaneously. This quantum property enables exponential computational advantages."
+          question: "What is the fundamental difference between a classical bit and a qubit?",
+          options: [
+            "A qubit can only be 0 or 1",
+            "A qubit can exist in superposition of 0 and 1 states",
+            "A qubit is faster than a bit",
+            "A qubit uses less energy"
+          ],
+          correctAnswer: 1,
+          explanation: "Unlike classical bits that are either 0 or 1, qubits can exist in a quantum superposition of both states simultaneously, written as α|0⟩ + β|1⟩."
         },
         {
-          topic: "Understanding Superposition",
-          explanation: "Superposition is the quantum phenomenon where a particle exists in multiple states simultaneously until measured. For qubits, this means being in a combination of |0⟩ and |1⟩ states, mathematically represented as α|0⟩ + β|1⟩ where |α|² + |β|² = 1."
-        },
-        {
-          topic: "Quantum Measurement",
-          explanation: "When a qubit in superposition is measured, it collapses to either |0⟩ or |1⟩ with probabilities determined by the amplitudes. This probabilistic nature is fundamental to quantum mechanics and differs from classical deterministic measurements."
+          question: "What happens when you measure a qubit in superposition?",
+          options: [
+            "It stays in superposition",
+            "It becomes two separate qubits",
+            "It collapses to either |0⟩ or |1⟩ probabilistically",
+            "It disappears"
+          ],
+          correctAnswer: 2,
+          explanation: "Measurement causes the quantum superposition to collapse, and the qubit becomes either |0⟩ or |1⟩ with probabilities determined by the quantum amplitudes."
         }
       ],
       2: [
         {
-          topic: "Pauli-X Gate (NOT Gate)",
-          explanation: "The X gate is the quantum analog of the classical NOT gate. It flips |0⟩ to |1⟩ and |1⟩ to |0⟩. Mathematically, it's represented by the Pauli-X matrix [[0,1],[1,0]] and performs a bit-flip operation on the computational basis."
+          question: "What does the Pauli-X gate do to a qubit?",
+          options: [
+            "Creates superposition",
+            "Flips |0⟩ to |1⟩ and |1⟩ to |0⟩",
+            "Measures the qubit",
+            "Entangles two qubits"
+          ],
+          correctAnswer: 1,
+          explanation: "The Pauli-X gate is the quantum NOT gate. It flips the computational basis states: X|0⟩ = |1⟩ and X|1⟩ = |0⟩."
         },
         {
-          topic: "Hadamard Gate - Creating Superposition",
-          explanation: "The Hadamard gate creates equal superposition from basis states. It transforms |0⟩ → (|0⟩ + |1⟩)/√2 and |1⟩ → (|0⟩ - |1⟩)/√2. This gate is essential for quantum algorithms as it enables quantum parallelism."
-        },
-        {
-          topic: "Gate Unitarity and Reversibility",
-          explanation: "All quantum gates are unitary matrices, meaning they preserve probability amplitudes and are reversible. The inverse of any quantum gate can undo its operation, unlike classical irreversible gates."
+          question: "What is the result of applying a Hadamard gate to |0⟩?",
+          options: [
+            "|1⟩",
+            "|0⟩",
+            "(|0⟩ + |1⟩)/√2",
+            "(|0⟩ - |1⟩)/√2"
+          ],
+          correctAnswer: 2,
+          explanation: "The Hadamard gate creates equal superposition: H|0⟩ = (|0⟩ + |1⟩)/√2, giving equal probability of measuring 0 or 1."
         }
       ],
       3: [
         {
-          topic: "Quantum Entanglement Fundamentals",
-          explanation: "Entanglement creates quantum correlations between particles where measuring one instantly determines the state of the other, regardless of distance. This non-local connection is a purely quantum phenomenon with no classical equivalent."
+          question: "What is quantum entanglement?",
+          options: [
+            "When qubits are physically close together",
+            "When qubits share quantum correlations regardless of distance",
+            "When qubits have the same energy",
+            "When qubits rotate at the same speed"
+          ],
+          correctAnswer: 1,
+          explanation: "Quantum entanglement creates correlations between particles where measuring one instantly determines the state of the other, no matter how far apart they are."
         },
         {
-          topic: "Bell States and Maximum Entanglement",
-          explanation: "The four Bell states represent maximally entangled two-qubit systems: |Φ±⟩ = (|00⟩ ± |11⟩)/√2 and |Ψ±⟩ = (|01⟩ ± |10⟩)/√2. These states exhibit perfect correlation and are fundamental to quantum protocols."
-        },
-        {
-          topic: "CNOT Gate for Entanglement Creation",
-          explanation: "The Controlled-NOT (CNOT) gate creates entanglement between qubits. It flips the target qubit if the control qubit is |1⟩. When applied to |+0⟩ (where |+⟩ = (|0⟩ + |1⟩)/√2), it produces the entangled Bell state |Φ+⟩."
-        }
-      ],
-      4: [
-        {
-          topic: "Classical vs Quantum Image Representation",
-          explanation: "Classical images use pixels with definite RGB values (0-255). Quantum image processing encodes pixel information in qubit amplitudes, potentially allowing superposition of multiple image states for parallel processing of different image transformations."
-        },
-        {
-          topic: "Quantum Image Encoding Schemes",
-          explanation: "NEQR (Novel Enhanced Quantum Representation) and FRQI (Flexible Representation of Quantum Images) are methods to encode classical images into quantum states, where pixel positions and intensities are stored in qubit superpositions."
-        },
-        {
-          topic: "Quantum Fourier Transform for Images",
-          explanation: "The Quantum Fourier Transform (QFT) can analyze frequency components of quantum-encoded images exponentially faster than classical FFT, enabling advanced quantum image processing applications like pattern recognition and compression."
-        }
-      ],
-      5: [
-        {
-          topic: "Grover's Search Algorithm Mechanics",
-          explanation: "Grover's algorithm searches unsorted databases in O(√N) time using amplitude amplification. It repeatedly applies the Grover operator (oracle + diffusion) to amplify correct answer amplitudes while diminishing incorrect ones."
-        },
-        {
-          topic: "Quantum Oracle Functions",
-          explanation: "An oracle in quantum computing is a 'black box' that marks target items by flipping their phase. For search problems, the oracle flips the phase of the target state |x⟩ → -|x⟩, setting up the amplitude amplification process."
-        },
-        {
-          topic: "Amplitude Amplification Process",
-          explanation: "The diffusion operator reflects amplitudes about their average, combined with the oracle phase flip. This geometric rotation in the amplitude space systematically increases the probability of measuring the target state."
-        }
-      ],
-      6: [
-        {
-          topic: "Quantum Speedup in Image Processing",
-          explanation: "Quantum algorithms can theoretically process multiple image transformations simultaneously through superposition, offering exponential speedups for certain operations like searching, pattern matching, and feature extraction."
-        },
-        {
-          topic: "Quantum Edge Detection",
-          explanation: "Quantum edge detection algorithms use quantum operators to identify pixel intensity gradients. The quantum approach can potentially analyze multiple edge detection kernels in superposition, processing various edge types simultaneously."
-        },
-        {
-          topic: "Quantum Pattern Recognition",
-          explanation: "Quantum machine learning algorithms for pattern recognition in images leverage quantum entanglement and superposition to potentially recognize multiple patterns simultaneously, offering advantages in computer vision tasks."
+          question: "Which gate is commonly used to create entanglement?",
+          options: [
+            "Hadamard gate",
+            "Pauli-X gate",
+            "CNOT gate",
+            "Z gate"
+          ],
+          correctAnswer: 2,
+          explanation: "The CNOT (Controlled-NOT) gate creates entanglement. When applied to |+0⟩, it produces the Bell state |Φ+⟩ = (|00⟩ + |11⟩)/√2."
         }
       ]
     };
-
     return questionBank[levelId] || questionBank[1];
   };
 
-  // Generate story pages with more detailed quantum concepts
+  // Generate story pages with integrated questions
   const generateStoryPages = (level: QuantumLevel): StoryPage[] => {
     const challengeQuestions = getChallengeQuestions(level.id);
     
-    const basePages: StoryPage[] = [
+    const pages: StoryPage[] = [
       {
         id: 1,
         title: "The Quantum Adventure Begins",
@@ -129,40 +133,29 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
       {
         id: 2,
         title: "The Quantum Tale Unfolds",
-        content: level.storyText,
+        content: level.storyText + "\n\nNow, let us delve deeper into the quantum principles that govern this realm...",
         illustration: getAdvancedIllustrationKey(level.concept),
         concept: level.concept
+      },
+      {
+        id: 3,
+        title: "Test Your Quantum Knowledge",
+        content: "Before you face the final challenge, the Quantum Masters want to test your understanding. Answer these questions to prove your readiness for battle!",
+        illustration: "quantum_knowledge_test",
+        concept: "Knowledge Test",
+        hasQuestions: true,
+        questions: challengeQuestions
+      },
+      {
+        id: 4,
+        title: "Ready for the Quantum Battle",
+        content: `Excellent! You have proven your mastery of ${level.concept}. You are now ready to face the Quantum Villain in the ${level.gameType} challenge.\n\nRemember: Every aspect of your upcoming battle relates directly to the concepts you've just learned. Trust in your quantum wisdom!`,
+        illustration: "quantum_battle_ready",
+        concept: "Final Preparation"
       }
     ];
 
-    // Add detailed theoretical pages for each challenge concept
-    const challengePages: StoryPage[] = challengeQuestions.map((question, index) => ({
-      id: basePages.length + index + 1,
-      title: `Quantum Wisdom ${index + 1}: ${question.topic}`,
-      content: `The ancient quantum scrolls reveal:\n\n${question.explanation}\n\nThis knowledge is crucial for your upcoming trial. The Quantum Villain will test your understanding of these very concepts. Study well, for mastery of ${question.topic.toLowerCase()} will determine your success in the quantum challenge ahead!`,
-      illustration: getConceptIllustrationKey(question.topic),
-      concept: question.topic
-    }));
-
-    // Add learning objectives as quest goals
-    const learningPages: StoryPage[] = level.learningObjectives.map((objective, index) => ({
-      id: basePages.length + challengePages.length + index + 1,
-      title: `Quest Objective ${index + 1}`,
-      content: `Your mission: ${objective}\n\nThis objective connects directly to the quantum principles you've learned. The Quantum Villain has crafted challenges that will test your mastery of these very concepts. Remember the theoretical foundations - they are your weapons in the battle ahead!`,
-      illustration: "quest_objective",
-      concept: `Quest ${index + 1}`
-    }));
-
-    // Final preparation page
-    const finalPage: StoryPage = {
-      id: basePages.length + challengePages.length + learningPages.length + 1,
-      title: "Ready for the Quantum Battle",
-      content: `You are now armed with the quantum knowledge necessary to face the ${level.gameType} challenge.\n\nYou have studied the theoretical foundations, understood the mathematical principles, and learned the practical applications. The Quantum Villain awaits, but you are prepared!\n\nRemember: Every question in your challenge relates directly to the concepts you've just mastered. Trust in your quantum wisdom!`,
-      illustration: "quantum_battle_ready",
-      concept: "Final Preparation"
-    };
-
-    return [...basePages, ...challengePages, ...learningPages, finalPage];
+    return pages;
   };
 
   const storyPages = generateStoryPages(level);
@@ -173,6 +166,28 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   }, []);
 
   const handleNextPage = () => {
+    const currentPageData = storyPages[currentPage];
+    
+    if (currentPageData?.hasQuestions && !showQuestions) {
+      setShowQuestions(true);
+      return;
+    }
+    
+    if (showQuestions) {
+      const questions = currentPageData?.questions || [];
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+        setSelectedAnswer(null);
+        setShowExplanation(false);
+        return;
+      } else {
+        setShowQuestions(false);
+        setCurrentQuestionIndex(0);
+        setSelectedAnswer(null);
+        setShowExplanation(false);
+      }
+    }
+    
     if (currentPage < totalPages - 1 && !isFlipping) {
       setIsFlipping(true);
       setTimeout(() => {
@@ -183,6 +198,21 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   };
 
   const handlePrevPage = () => {
+    if (showQuestions) {
+      if (currentQuestionIndex > 0) {
+        setCurrentQuestionIndex(currentQuestionIndex - 1);
+        setSelectedAnswer(null);
+        setShowExplanation(false);
+        return;
+      } else {
+        setShowQuestions(false);
+        setCurrentQuestionIndex(0);
+        setSelectedAnswer(null);
+        setShowExplanation(false);
+        return;
+      }
+    }
+    
     if (currentPage > 0 && !isFlipping) {
       setIsFlipping(true);
       setTimeout(() => {
@@ -192,10 +222,18 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
     }
   };
 
+  const handleAnswerSelect = (answerIndex: number) => {
+    setSelectedAnswer(answerIndex);
+    setShowExplanation(true);
+  };
+
   const handleStartChallenge = () => {
     setBookOpened(false);
     setTimeout(onComplete, 800);
   };
+
+  const currentPageData = storyPages[currentPage];
+  const currentQuestion = currentPageData?.questions?.[currentQuestionIndex];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
@@ -253,29 +291,75 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                   }`}
                 >
                   <div className="h-full flex items-center justify-center">
-                    {renderAdvancedSVGIllustration(storyPages[currentPage]?.illustration)}
+                    {renderAdvancedSVGIllustration(currentPageData?.illustration)}
                   </div>
                 </div>
               </div>
 
-              {/* Right Page - Text Content */}
+              {/* Right Page - Text Content or Questions */}
               <div className="w-1/2 p-6 relative overflow-hidden">
-                {currentPage < totalPages - 1 ? (
+                {showQuestions && currentQuestion ? (
+                  // Question Mode
+                  <div className="h-full flex flex-col">
+                    <h3 className="text-lg font-bold text-amber-900 mb-4 text-center">
+                      Question {currentQuestionIndex + 1} of {currentPageData?.questions?.length}
+                    </h3>
+                    
+                    <div className="flex-1 space-y-4">
+                      <p className="text-amber-800 font-medium mb-4">
+                        {currentQuestion.question}
+                      </p>
+                      
+                      <div className="space-y-2">
+                        {currentQuestion.options.map((option, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleAnswerSelect(index)}
+                            disabled={selectedAnswer !== null}
+                            className={`w-full p-3 text-left rounded-lg border-2 transition-all duration-200 ${
+                              selectedAnswer === null
+                                ? 'border-amber-300 hover:border-amber-500 hover:bg-amber-50'
+                                : selectedAnswer === index
+                                ? index === currentQuestion.correctAnswer
+                                  ? 'border-green-500 bg-green-50 text-green-800'
+                                  : 'border-red-500 bg-red-50 text-red-800'
+                                : index === currentQuestion.correctAnswer
+                                ? 'border-green-500 bg-green-50 text-green-800'
+                                : 'border-gray-300 bg-gray-50 text-gray-600'
+                            }`}
+                          >
+                            {String.fromCharCode(65 + index)}. {option}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      {showExplanation && (
+                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <p className="text-blue-800 text-sm">
+                            <strong>Explanation:</strong> {currentQuestion.explanation}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : currentPage < totalPages - 1 ? (
+                  // Regular Page Content
                   <div 
                     className={`transform transition-all duration-300 ${
                       isFlipping ? 'scale-95 opacity-50' : 'scale-100 opacity-100'
                     }`}
                   >
                     <h3 className="text-xl font-bold text-amber-900 mb-4 text-center border-b-2 border-amber-300 pb-2">
-                      {storyPages[currentPage]?.title}
+                      {currentPageData?.title}
                     </h3>
                     <div className="text-amber-800 leading-relaxed text-sm space-y-3 overflow-y-auto max-h-80">
-                      {storyPages[currentPage]?.content.split('\n\n').map((paragraph, idx) => (
+                      {currentPageData?.content.split('\n\n').map((paragraph, idx) => (
                         <p key={idx} className="text-justify">{paragraph}</p>
                       ))}
                     </div>
                   </div>
                 ) : (
+                  // Final Page
                   <div className="flex flex-col items-center justify-center h-full">
                     <div className="text-center">
                       {renderAdvancedSVGIllustration("quantum_battle_ready")}
@@ -299,7 +383,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-4">
               <Button
                 onClick={handlePrevPage}
-                disabled={currentPage === 0 || isFlipping}
+                disabled={(currentPage === 0 && !showQuestions && currentQuestionIndex === 0) || isFlipping}
                 variant="outline"
                 size="sm"
                 className="border-amber-600 text-amber-700 hover:bg-amber-100"
@@ -308,12 +392,19 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
               </Button>
               
               <span className="text-amber-700 font-medium">
-                {currentPage + 1} / {totalPages}
+                {showQuestions 
+                  ? `Q${currentQuestionIndex + 1}/${currentPageData?.questions?.length || 0}` 
+                  : `${currentPage + 1} / ${totalPages}`
+                }
               </span>
               
               <Button
                 onClick={handleNextPage}
-                disabled={currentPage >= totalPages - 1 || isFlipping}
+                disabled={
+                  (!showQuestions && currentPage >= totalPages - 1) || 
+                  (showQuestions && selectedAnswer === null) ||
+                  isFlipping
+                }
                 variant="outline"
                 size="sm"
                 className="border-amber-600 text-amber-700 hover:bg-amber-100"
@@ -323,7 +414,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
             </div>
 
             <div className="absolute bottom-2 left-6 text-xs text-amber-600">
-              {currentPage + 1}
+              {showQuestions ? `Questions` : currentPage + 1}
             </div>
           </Card>
         </div>
@@ -362,7 +453,7 @@ function renderAdvancedSVGIllustration(key: string) {
           <linearGradient id="swordGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#FFD700" />
             <stop offset="100%" stopColor="#FFA500" />
-          </linearGradient>
+          </radialGradient>
         </defs>
         {/* Quantum Warrior */}
         <circle cx="150" cy="120" r="45" fill="url(#warriorGradient)" />
@@ -416,35 +507,33 @@ function renderAdvancedSVGIllustration(key: string) {
         <text x="150" y="340" textAnchor="middle" fill="#6B46C1" fontSize="16" fontWeight="bold">Quantum Superposition</text>
       </svg>
     ),
-    quantum_entanglement: (
+    quantum_knowledge_test: (
       <svg width="300" height="400" viewBox="0 0 300 400" className="drop-shadow-lg">
         <defs>
-          <radialGradient id="entangle1" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#FF6B6B" />
-            <stop offset="100%" stopColor="#4ECDC4" />
-          </radialGradient>
-          <radialGradient id="entangle2" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#4ECDC4" />
-            <stop offset="100%" stopColor="#FF6B6B" />
+          <radialGradient id="knowledgeGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#10B981" />
+            <stop offset="100%" stopColor="#3B82F6" />
           </radialGradient>
         </defs>
-        {/* Entangled Qubits */}
-        <circle cx="100" cy="150" r="30" fill="url(#entangle1)" opacity="0.8">
-          <animate attributeName="r" values="30;35;30" dur="2s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="200" cy="250" r="30" fill="url(#entangle2)" opacity="0.8">
-          <animate attributeName="r" values="30;35;30" dur="2s" repeatCount="indefinite" begin="1s" />
-        </circle>
-        {/* Quantum Correlation Lines */}
-        <path d="M130 150 Q150 100 170 150 Q150 200 130 150" fill="none" stroke="#8B5CF6" strokeWidth="4" opacity="0.7">
-          <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" />
-        </path>
-        <path d="M130 150 Q150 300 170 250" fill="none" stroke="#EC4899" strokeWidth="4" opacity="0.7">
-          <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
-        </path>
-        {/* Bell State Notation */}
-        <text x="150" y="80" textAnchor="middle" fill="#6B46C1" fontSize="14" fontWeight="bold">|Φ+⟩ = (|00⟩ + |11⟩)/√2</text>
-        <text x="150" y="350" textAnchor="middle" fill="#6B46C1" fontSize="16" fontWeight="bold">Quantum Entanglement</text>
+        {/* Brain/Knowledge Symbol */}
+        <circle cx="150" cy="200" r="70" fill="url(#knowledgeGradient)" opacity="0.8" />
+        {/* Neural Network Pattern */}
+        {[...Array(12)].map((_, i) => {
+          const angle = (i * Math.PI * 2) / 12;
+          const x = 150 + Math.cos(angle) * 50;
+          const y = 200 + Math.sin(angle) * 50;
+          return (
+            <g key={i}>
+              <circle cx={x} cy={y} r="6" fill="#FFD700" opacity="0.8">
+                <animate attributeName="opacity" values="0.4;1;0.4" dur={`${1 + i * 0.1}s`} repeatCount="indefinite" />
+              </circle>
+              <line x1="150" y1="200" x2={x} y2={y} stroke="#FFD700" strokeWidth="2" opacity="0.6" />
+            </g>
+          );
+        })}
+        {/* Question Mark */}
+        <text x="150" y="210" textAnchor="middle" fill="#FFFFFF" fontSize="48" fontWeight="bold">?</text>
+        <text x="150" y="340" textAnchor="middle" fill="#6B46C1" fontSize="16" fontWeight="bold">Test Your Knowledge</text>
       </svg>
     ),
     quantum_battle_ready: (
@@ -481,7 +570,7 @@ function getAdvancedIllustrationKey(concept: string): string {
     'Heisenberg Uncertainty': 'quantum_superposition',
     'Discrete Energy States': 'quantum_superposition',
     'Quantum Light': 'quantum_superposition',
-    'Computing Paradigms': 'quantum_gates',
+    'Computing Paradigms': 'quantum_superposition',
     'Quantum Revolution': 'quantum_battle_ready',
     'Quantum Bit Basics': 'quantum_superposition',
     'Qubit Visualization': 'quantum_superposition',
@@ -489,34 +578,10 @@ function getAdvancedIllustrationKey(concept: string): string {
     'Linear Combinations': 'quantum_superposition',
     'Quantum Measurement': 'quantum_superposition',
     'Quantum Phase': 'quantum_superposition',
-    'Multi-Qubit Systems': 'quantum_entanglement',
-    'State Preparation': 'quantum_gates',
+    'Multi-Qubit Systems': 'quantum_superposition',
+    'State Preparation': 'quantum_superposition',
     'Quantum Coherence': 'quantum_superposition',
-    'Qubit Technologies': 'quantum_gates'
+    'Qubit Technologies': 'quantum_superposition'
   };
   return conceptMap[concept] || 'quantum_warrior_intro';
-}
-
-function getConceptIllustrationKey(topic: string): string {
-  const topicMap: Record<string, string> = {
-    'What is a Qubit?': 'quantum_superposition',
-    'Understanding Superposition': 'quantum_superposition',
-    'Quantum Measurement': 'quantum_superposition',
-    'Pauli-X Gate (NOT Gate)': 'quantum_gates',
-    'Hadamard Gate - Creating Superposition': 'quantum_gates',
-    'Gate Unitarity and Reversibility': 'quantum_gates',
-    'Quantum Entanglement Fundamentals': 'quantum_entanglement',
-    'Bell States and Maximum Entanglement': 'quantum_entanglement',
-    'CNOT Gate for Entanglement Creation': 'quantum_entanglement',
-    'Classical vs Quantum Image Representation': 'quest_objective',
-    'Quantum Image Encoding Schemes': 'quest_objective',
-    'Quantum Fourier Transform for Images': 'quest_objective',
-    "Grover's Search Algorithm Mechanics": 'quantum_gates',
-    'Quantum Oracle Functions': 'quantum_gates',
-    'Amplitude Amplification Process': 'quantum_superposition',
-    'Quantum Speedup in Image Processing': 'quest_objective',
-    'Quantum Edge Detection': 'quest_objective',
-    'Quantum Pattern Recognition': 'quest_objective'
-  };
-  return topicMap[topic] || 'quest_objective';
 }

@@ -4,17 +4,28 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Star, Circle, Plus, GridIcon, Heart, CheckCircle, BookOpen, Trophy, ArrowRight, Sparkles, Home } from 'lucide-react';
+import { Star, Circle, Plus, GridIcon, Heart, CheckCircle, BookOpen, Trophy, ArrowRight, Sparkles, Home, Play } from 'lucide-react';
 import { chapters } from '@/data/quantumLevels';
+import { useNavigate } from 'react-router-dom';
 
 interface QuantumRoadmapProps {
   onStartJourney: () => void;
   onClose: () => void;
+  playerProgress?: {
+    completedLevels: number[];
+    currentLevel: number;
+    totalStars: number;
+  };
 }
 
-export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, onClose }) => {
+export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ 
+  onStartJourney, 
+  onClose,
+  playerProgress = { completedLevels: [], currentLevel: 1, totalStars: 0 }
+}) => {
   const [visibleChapters, setVisibleChapters] = useState<number[]>([]);
   const [floatingParticles, setFloatingParticles] = useState<Array<{id: number, x: number, y: number, delay: number}>>([]);
+  const navigate = useNavigate();
 
   const getIconComponent = (iconName: string) => {
     const icons = {
@@ -28,6 +39,37 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
       'trophy': Trophy
     };
     return icons[iconName as keyof typeof icons] || Star;
+  };
+
+  const isChapterUnlocked = (chapterIndex: number): boolean => {
+    if (chapterIndex === 0) return true;
+    // Chapter is unlocked if previous chapter has at least 80% completion
+    const prevChapterLevels = getChapterLevels(chapterIndex);
+    const completedInPrevChapter = prevChapterLevels.filter(level => 
+      playerProgress.completedLevels.includes(level)
+    ).length;
+    return completedInPrevChapter >= Math.ceil(prevChapterLevels.length * 0.8);
+  };
+
+  const getChapterLevels = (chapterIndex: number): number[] => {
+    // Return level IDs for the chapter (assuming 10 levels per chapter)
+    const startLevel = chapterIndex * 10 + 1;
+    return Array.from({ length: 10 }, (_, i) => startLevel + i);
+  };
+
+  const getChapterProgress = (chapterIndex: number): number => {
+    const chapterLevels = getChapterLevels(chapterIndex);
+    const completedInChapter = chapterLevels.filter(level => 
+      playerProgress.completedLevels.includes(level)
+    ).length;
+    return (completedInChapter / chapterLevels.length) * 100;
+  };
+
+  const handleChapterClick = (chapterIndex: number) => {
+    if (isChapterUnlocked(chapterIndex)) {
+      // Navigate to story board with the specific chapter selected
+      navigate('/story-board', { state: { selectedChapter: chapterIndex + 1 } });
+    }
   };
 
   useEffect(() => {
@@ -88,8 +130,24 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
             </div>
           </div>
 
+          {/* Progress Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="text-center bg-black/20 rounded-lg p-4">
+              <div className="text-2xl font-bold text-blue-400">{playerProgress.completedLevels.length}</div>
+              <p className="text-sm text-gray-400">Levels Completed</p>
+            </div>
+            <div className="text-center bg-black/20 rounded-lg p-4">
+              <div className="text-2xl font-bold text-yellow-400">{playerProgress.totalStars}</div>
+              <p className="text-sm text-gray-400">Total Stars</p>
+            </div>
+            <div className="text-center bg-black/20 rounded-lg p-4">
+              <div className="text-2xl font-bold text-purple-400">{playerProgress.currentLevel}</div>
+              <p className="text-sm text-gray-400">Current Level</p>
+            </div>
+          </div>
+
           {/* Quantum Roadmap */}
-          <ScrollArea className="h-[65vh] w-full relative">
+          <ScrollArea className="h-[55vh] w-full relative">
             <div className="relative px-8">
               {/* Quantum Energy Path - Organic flowing line */}
               <svg className="absolute left-1/2 top-0 bottom-0 w-2 h-full transform -translate-x-1/2 z-0" viewBox="0 0 20 1000">
@@ -124,6 +182,9 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
                   const IconComponent = getIconComponent(chapter.icon);
                   const isVisible = visibleChapters.includes(index);
                   const isEven = index % 2 === 0;
+                  const isUnlocked = isChapterUnlocked(index);
+                  const progress = getChapterProgress(index);
+                  const isCompleted = progress >= 100;
 
                   return (
                     <div
@@ -144,16 +205,28 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
                       <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
                         <div className="relative">
                           {/* Outer energy ring */}
-                          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-400 via-blue-400 to-pink-400 animate-spin opacity-60" 
+                          <div className={`w-16 h-16 rounded-full ${
+                            isCompleted ? 'bg-gradient-to-r from-green-400 via-blue-400 to-green-400' :
+                            isUnlocked ? 'bg-gradient-to-r from-purple-400 via-blue-400 to-pink-400' :
+                            'bg-gradient-to-r from-gray-600 via-gray-500 to-gray-600'
+                          } ${isUnlocked ? 'animate-spin' : ''} opacity-60`} 
                                style={{ animationDuration: '3s' }} />
                           {/* Inner portal */}
-                          <div className="absolute inset-2 w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center animate-pulse">
+                          <div className={`absolute inset-2 w-12 h-12 rounded-full ${
+                            isCompleted ? 'bg-gradient-to-r from-green-600 to-green-500' :
+                            isUnlocked ? 'bg-gradient-to-r from-blue-600 to-purple-600' :
+                            'bg-gradient-to-r from-gray-700 to-gray-600'
+                          } flex items-center justify-center ${isUnlocked ? 'animate-pulse' : ''}`}>
                             <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
-                              <span className="text-sm font-bold text-purple-900">{chapter.id}</span>
+                              {isCompleted ? (
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <span className="text-sm font-bold text-purple-900">{chapter.id}</span>
+                              )}
                             </div>
                           </div>
                           {/* Energy particles around portal */}
-                          {[...Array(6)].map((_, i) => (
+                          {isUnlocked && [...Array(6)].map((_, i) => (
                             <div
                               key={i}
                               className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-spin"
@@ -175,61 +248,105 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
                         } relative`}
                       >
                         {/* Crystal Shape Container */}
-                        <div className="relative transform hover:scale-105 transition-all duration-500 cursor-pointer group">
+                        <div 
+                          className={`relative transform hover:scale-105 transition-all duration-500 ${
+                            isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'
+                          } group`}
+                          onClick={() => handleChapterClick(index)}
+                        >
                           {/* Crystal Background */}
-                          <div className={`relative bg-gradient-to-br ${chapter.color} bg-opacity-20 backdrop-blur-lg border border-purple-400/30 p-6 rounded-3xl shadow-2xl overflow-hidden`}>
+                          <div className={`relative ${
+                            isCompleted ? 'bg-gradient-to-br from-green-600/30 to-blue-600/30' :
+                            isUnlocked ? `bg-gradient-to-br ${chapter.color}` :
+                            'bg-gradient-to-br from-gray-800/30 to-gray-700/30'
+                          } bg-opacity-20 backdrop-blur-lg border ${
+                            isCompleted ? 'border-green-400/50' :
+                            isUnlocked ? 'border-purple-400/30' :
+                            'border-gray-600/30'
+                          } p-6 rounded-3xl shadow-2xl overflow-hidden`}>
+                            {/* Lock overlay for locked chapters */}
+                            {!isUnlocked && (
+                              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center rounded-3xl">
+                                <div className="text-center">
+                                  <Circle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                  <p className="text-xs text-gray-400">Complete previous chapter</p>
+                                </div>
+                              </div>
+                            )}
+                            
                             {/* Crystal Facets Effect */}
                             <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent" />
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
                             <div className="absolute bottom-0 right-0 w-1 h-full bg-gradient-to-t from-transparent via-white/30 to-transparent" />
                             
                             {/* Floating Energy Inside Crystal */}
-                            <div className="absolute inset-0 overflow-hidden">
-                              {[...Array(8)].map((_, i) => (
-                                <div
-                                  key={i}
-                                  className="absolute w-1 h-1 bg-blue-300 rounded-full opacity-60 animate-bounce"
-                                  style={{
-                                    left: `${20 + Math.random() * 60}%`,
-                                    top: `${20 + Math.random() * 60}%`,
-                                    animationDuration: `${2 + Math.random() * 3}s`,
-                                    animationDelay: `${Math.random() * 2}s`
-                                  }}
-                                />
-                              ))}
-                            </div>
+                            {isUnlocked && (
+                              <div className="absolute inset-0 overflow-hidden">
+                                {[...Array(8)].map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className="absolute w-1 h-1 bg-blue-300 rounded-full opacity-60 animate-bounce"
+                                    style={{
+                                      left: `${20 + Math.random() * 60}%`,
+                                      top: `${20 + Math.random() * 60}%`,
+                                      animationDuration: `${2 + Math.random() * 3}s`,
+                                      animationDelay: `${Math.random() * 2}s`
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            )}
 
                             <div className="relative z-10">
                               <div className="flex items-center gap-4 mb-4">
-                                <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm group-hover:bg-white/20 transition-all duration-300">
-                                  <IconComponent className="h-10 w-10 text-white drop-shadow-lg" />
+                                <div className={`p-4 rounded-2xl ${
+                                  isUnlocked ? 'bg-white/10 group-hover:bg-white/20' : 'bg-gray-700/20'
+                                } backdrop-blur-sm transition-all duration-300`}>
+                                  <IconComponent className={`h-10 w-10 ${
+                                    isUnlocked ? 'text-white' : 'text-gray-500'
+                                  } drop-shadow-lg`} />
                                 </div>
                                 <div>
-                                  <h3 className="text-2xl font-bold text-white drop-shadow-lg">
+                                  <h3 className={`text-2xl font-bold ${
+                                    isUnlocked ? 'text-white' : 'text-gray-500'
+                                  } drop-shadow-lg`}>
                                     Chapter {chapter.id}
                                   </h3>
-                                  <p className="text-purple-100 text-lg font-medium">
+                                  <p className={`${
+                                    isUnlocked ? 'text-purple-100' : 'text-gray-500'
+                                  } text-lg font-medium`}>
                                     {chapter.title}
                                   </p>
                                 </div>
                               </div>
                               
-                              <p className="text-sm text-gray-200 mb-6 leading-relaxed">
+                              <p className={`text-sm ${
+                                isUnlocked ? 'text-gray-200' : 'text-gray-500'
+                              } mb-6 leading-relaxed`}>
                                 {chapter.description}
                               </p>
                               
                               <div className="flex items-center justify-between">
-                                <Badge className="bg-purple-600/30 text-purple-200 border border-purple-400/50 px-3 py-1">
+                                <Badge className={`${
+                                  isCompleted ? 'bg-green-600/30 text-green-200 border-green-400/50' :
+                                  isUnlocked ? 'bg-purple-600/30 text-purple-200 border-purple-400/50' :
+                                  'bg-gray-600/30 text-gray-400 border-gray-500/50'
+                                } px-3 py-1`}>
                                   10 Quantum Levels
                                 </Badge>
                                 <div className="flex items-center gap-2">
-                                  <div className="flex items-center gap-1">
-                                    {[...Array(3)].map((_, i) => (
-                                      <Star key={i} className="h-4 w-4 text-yellow-400 fill-current animate-pulse" 
-                                           style={{ animationDelay: `${i * 0.2}s` }} />
-                                    ))}
-                                  </div>
-                                  <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
+                                  {isUnlocked && (
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-xs text-gray-300">
+                                        {Math.round(progress)}%
+                                      </div>
+                                      {isCompleted ? (
+                                        <Trophy className="h-5 w-5 text-yellow-400 animate-pulse" />
+                                      ) : (
+                                        <Play className="h-5 w-5 text-blue-400 animate-pulse" />
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
