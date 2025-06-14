@@ -55,11 +55,11 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
         {floatingParticles.map((particle) => (
           <div
             key={particle.id}
-            className="absolute w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-60"
+            className="absolute w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full opacity-60 animate-bounce"
             style={{
               left: `${particle.x}%`,
               top: `${particle.y}%`,
-              animation: `float ${3 + Math.random() * 2}s ease-in-out infinite`,
+              animationDuration: `${3 + Math.random() * 2}s`,
               animationDelay: `${particle.delay}s`
             }}
           />
@@ -68,10 +68,9 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
 
       {/* Quantum Energy Waves */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/10 to-transparent animate-pulse" 
-             style={{ animation: 'wave 4s ease-in-out infinite' }} />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/10 to-transparent animate-pulse" />
         <div className="absolute inset-0 bg-gradient-to-l from-transparent via-blue-500/10 to-transparent animate-pulse" 
-             style={{ animation: 'wave 6s ease-in-out infinite reverse' }} />
+             style={{ animationDelay: '2s' }} />
       </div>
 
       <Card className="w-full max-w-7xl max-h-[95vh] bg-gradient-to-br from-slate-900/95 via-purple-900/95 to-slate-900/95 border border-purple-500/30 backdrop-blur-lg shadow-2xl">
@@ -146,7 +145,7 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
                         <div className="relative">
                           {/* Outer energy ring */}
                           <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-400 via-blue-400 to-pink-400 animate-spin opacity-60" 
-                               style={{ animation: 'spin 3s linear infinite' }} />
+                               style={{ animationDuration: '3s' }} />
                           {/* Inner portal */}
                           <div className="absolute inset-2 w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center animate-pulse">
                             <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
@@ -157,12 +156,12 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
                           {[...Array(6)].map((_, i) => (
                             <div
                               key={i}
-                              className="absolute w-2 h-2 bg-yellow-400 rounded-full"
+                              className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-spin"
                               style={{
                                 top: '50%',
                                 left: '50%',
                                 transform: `translate(-50%, -50%) rotate(${i * 60}deg) translateY(-24px)`,
-                                animation: `orbit ${2 + i * 0.3}s linear infinite`
+                                animationDuration: `${2 + i * 0.3}s`
                               }}
                             />
                           ))}
@@ -189,11 +188,11 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
                               {[...Array(8)].map((_, i) => (
                                 <div
                                   key={i}
-                                  className="absolute w-1 h-1 bg-blue-300 rounded-full opacity-60"
+                                  className="absolute w-1 h-1 bg-blue-300 rounded-full opacity-60 animate-bounce"
                                   style={{
                                     left: `${20 + Math.random() * 60}%`,
                                     top: `${20 + Math.random() * 60}%`,
-                                    animation: `float ${2 + Math.random() * 3}s ease-in-out infinite`,
+                                    animationDuration: `${2 + Math.random() * 3}s`,
                                     animationDelay: `${Math.random() * 2}s`
                                   }}
                                 />
@@ -267,7 +266,7 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
                   {/* Master Portal */}
                   <div className="relative">
                     <div className="w-32 h-32 rounded-full bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 animate-spin opacity-80" 
-                         style={{ animation: 'spin 4s linear infinite' }} />
+                         style={{ animationDuration: '4s' }} />
                     <div className="absolute inset-4 w-24 h-24 rounded-full bg-gradient-to-r from-yellow-300 to-orange-300 flex items-center justify-center animate-pulse">
                       <Trophy className="h-16 w-16 text-white drop-shadow-lg" />
                     </div>
@@ -275,12 +274,12 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
                     {[...Array(12)].map((_, i) => (
                       <div
                         key={i}
-                        className="absolute w-3 h-3 bg-yellow-300 rounded-full"
+                        className="absolute w-3 h-3 bg-yellow-300 rounded-full animate-spin"
                         style={{
                           top: '50%',
                           left: '50%',
                           transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-48px)`,
-                          animation: `orbit ${3 + i * 0.1}s linear infinite`
+                          animationDuration: `${3 + i * 0.1}s`
                         }}
                       />
                     ))}
@@ -317,21 +316,6 @@ export const QuantumRoadmap: React.FC<QuantumRoadmapProps> = ({ onStartJourney, 
           </div>
         </CardContent>
       </Card>
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(180deg); }
-        }
-        @keyframes orbit {
-          from { transform: translate(-50%, -50%) rotate(0deg) translateY(-24px); }
-          to { transform: translate(-50%, -50%) rotate(360deg) translateY(-24px); }
-        }
-        @keyframes wave {
-          0%, 100% { transform: translateX(-100%); }
-          50% { transform: translateX(100%); }
-        }
-      `}</style>
     </div>
   );
 };
