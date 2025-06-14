@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { type QuantumLevel } from '@/data/quantumLevels';
 import { QuantumMiniGame } from '@/components/QuantumMiniGame';
 import { LevelIntro } from '@/components/LevelIntro';
+import { StoryBook } from '@/components/StoryBook';
 
 interface LevelDetailProps {
   level: QuantumLevel;
@@ -12,17 +13,26 @@ interface LevelDetailProps {
 }
 
 export const LevelDetail: React.FC<LevelDetailProps> = ({ level, isCompleted, stars, onComplete }) => {
-  const [showGame, setShowGame] = useState(false);
+  const [currentView, setCurrentView] = useState<'intro' | 'story' | 'game'>('intro');
 
-  if (showGame) {
+  if (currentView === 'story') {
+    return (
+      <StoryBook
+        level={level}
+        onComplete={() => setCurrentView('game')}
+      />
+    );
+  }
+
+  if (currentView === 'game') {
     return (
       <QuantumMiniGame
         level={level}
         onComplete={(earnedStars) => {
           onComplete(earnedStars);
-          setShowGame(false);
+          setCurrentView('intro');
         }}
-        onBack={() => setShowGame(false)}
+        onBack={() => setCurrentView('intro')}
       />
     );
   }
@@ -32,7 +42,7 @@ export const LevelDetail: React.FC<LevelDetailProps> = ({ level, isCompleted, st
       level={level}
       isCompleted={isCompleted}
       stars={stars}
-      onStartLevel={() => setShowGame(true)}
+      onStartLevel={() => setCurrentView('story')}
     />
   );
 };
