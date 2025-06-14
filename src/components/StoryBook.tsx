@@ -22,144 +22,144 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [isFlipping, setIsFlipping] = useState(false);
   const [bookOpened, setBookOpened] = useState(false);
 
-  // Get challenge questions for this level to include theoretical explanations
+  // Generate more accurate challenge questions based on level concepts
   const getChallengeQuestions = (levelId: number) => {
-    const questions = {
+    const questionBank: Record<number, Array<{topic: string, explanation: string}>> = {
       1: [
         {
           topic: "What is a Qubit?",
-          explanation: "A qubit (quantum bit) is the fundamental unit of quantum information. Unlike classical bits that are either 0 or 1, qubits can exist in a superposition of both states simultaneously. This is the key to quantum computing's power."
+          explanation: "A qubit is the fundamental unit of quantum information. Unlike classical bits that exist as either 0 or 1, qubits can exist in a superposition of both states simultaneously. This quantum property enables exponential computational advantages."
         },
         {
           topic: "Understanding Superposition",
-          explanation: "Superposition allows a qubit to be in multiple states at once until measured. It's like Schrödinger's cat being both alive and dead - the qubit exists in all possibilities simultaneously."
+          explanation: "Superposition is the quantum phenomenon where a particle exists in multiple states simultaneously until measured. For qubits, this means being in a combination of |0⟩ and |1⟩ states, mathematically represented as α|0⟩ + β|1⟩ where |α|² + |β|² = 1."
         },
         {
-          topic: "The Measurement Process",
-          explanation: "When you measure a qubit in superposition, it collapses to a definite state (0 or 1) with certain probabilities. This collapse is fundamental to how quantum computers extract information."
+          topic: "Quantum Measurement",
+          explanation: "When a qubit in superposition is measured, it collapses to either |0⟩ or |1⟩ with probabilities determined by the amplitudes. This probabilistic nature is fundamental to quantum mechanics and differs from classical deterministic measurements."
         }
       ],
       2: [
         {
-          topic: "The X Gate (NOT Gate)",
-          explanation: "The X gate is the quantum equivalent of the classical NOT gate. It flips |0⟩ to |1⟩ and |1⟩ to |0⟩. It's one of the most basic quantum operations you'll use."
+          topic: "Pauli-X Gate (NOT Gate)",
+          explanation: "The X gate is the quantum analog of the classical NOT gate. It flips |0⟩ to |1⟩ and |1⟩ to |0⟩. Mathematically, it's represented by the Pauli-X matrix [[0,1],[1,0]] and performs a bit-flip operation on the computational basis."
         },
         {
-          topic: "Creating Superposition with Hadamard",
-          explanation: "The Hadamard gate (H) creates equal superposition from definite states. It transforms |0⟩ into (|0⟩ + |1⟩)/√2, putting the qubit in a perfect 50-50 superposition."
+          topic: "Hadamard Gate - Creating Superposition",
+          explanation: "The Hadamard gate creates equal superposition from basis states. It transforms |0⟩ → (|0⟩ + |1⟩)/√2 and |1⟩ → (|0⟩ - |1⟩)/√2. This gate is essential for quantum algorithms as it enables quantum parallelism."
         },
         {
-          topic: "Gate Sequences and Reversibility",
-          explanation: "Quantum gates are reversible. Applying two X gates in sequence returns the qubit to its original state: X(X|ψ⟩) = |ψ⟩. This reversibility is crucial for quantum computation."
+          topic: "Gate Unitarity and Reversibility",
+          explanation: "All quantum gates are unitary matrices, meaning they preserve probability amplitudes and are reversible. The inverse of any quantum gate can undo its operation, unlike classical irreversible gates."
         }
       ],
       3: [
         {
-          topic: "What is Quantum Entanglement?",
-          explanation: "Entanglement creates a mysterious connection between particles where measuring one instantly affects the other, regardless of distance. It's a purely quantum phenomenon with no classical equivalent."
+          topic: "Quantum Entanglement Fundamentals",
+          explanation: "Entanglement creates quantum correlations between particles where measuring one instantly determines the state of the other, regardless of distance. This non-local connection is a purely quantum phenomenon with no classical equivalent."
         },
         {
-          topic: "Einstein's 'Spooky Action'",
-          explanation: "Einstein called entanglement 'spooky action at a distance' because it seemed to violate locality. However, experiments have confirmed that entanglement is real and fundamental to quantum mechanics."
+          topic: "Bell States and Maximum Entanglement",
+          explanation: "The four Bell states represent maximally entangled two-qubit systems: |Φ±⟩ = (|00⟩ ± |11⟩)/√2 and |Ψ±⟩ = (|01⟩ ± |10⟩)/√2. These states exhibit perfect correlation and are fundamental to quantum protocols."
         },
         {
-          topic: "Bell States - Maximum Entanglement",
-          explanation: "Bell states are the four maximally entangled quantum states of two qubits. They demonstrate the strongest form of quantum correlation and are foundational for quantum protocols."
+          topic: "CNOT Gate for Entanglement Creation",
+          explanation: "The Controlled-NOT (CNOT) gate creates entanglement between qubits. It flips the target qubit if the control qubit is |1⟩. When applied to |+0⟩ (where |+⟩ = (|0⟩ + |1⟩)/√2), it produces the entangled Bell state |Φ+⟩."
         }
       ],
       4: [
         {
-          topic: "Understanding Pixels",
-          explanation: "A pixel (picture element) is the smallest controllable element of a digital image. Images are composed of thousands or millions of pixels arranged in a grid, each with color information."
+          topic: "Classical vs Quantum Image Representation",
+          explanation: "Classical images use pixels with definite RGB values (0-255). Quantum image processing encodes pixel information in qubit amplitudes, potentially allowing superposition of multiple image states for parallel processing of different image transformations."
         },
         {
-          topic: "RGB Color Model",
-          explanation: "RGB represents Red, Green, and Blue - the three primary colors of light. Each pixel has values for these components (typically 0-255), which combine to create all visible colors."
+          topic: "Quantum Image Encoding Schemes",
+          explanation: "NEQR (Novel Enhanced Quantum Representation) and FRQI (Flexible Representation of Quantum Images) are methods to encode classical images into quantum states, where pixel positions and intensities are stored in qubit superpositions."
         },
         {
-          topic: "Image Filtering Fundamentals",
-          explanation: "Image filtering applies mathematical operations to modify images - like blurring, sharpening, or edge detection. Filters are mathematical tools that transform raw images into enhanced visuals."
+          topic: "Quantum Fourier Transform for Images",
+          explanation: "The Quantum Fourier Transform (QFT) can analyze frequency components of quantum-encoded images exponentially faster than classical FFT, enabling advanced quantum image processing applications like pattern recognition and compression."
         }
       ],
       5: [
         {
-          topic: "Grover's Search Algorithm",
-          explanation: "Grover's algorithm provides quadratic speedup for searching unsorted databases. While classical algorithms need O(N) time, Grover's algorithm needs only O(√N) time through quantum parallelism."
+          topic: "Grover's Search Algorithm Mechanics",
+          explanation: "Grover's algorithm searches unsorted databases in O(√N) time using amplitude amplification. It repeatedly applies the Grover operator (oracle + diffusion) to amplify correct answer amplitudes while diminishing incorrect ones."
         },
         {
-          topic: "Shor's Factoring Algorithm",
-          explanation: "Shor's algorithm can factor large integers exponentially faster than classical algorithms. This threatens current cryptographic systems but opens doors to new quantum cryptography methods."
+          topic: "Quantum Oracle Functions",
+          explanation: "An oracle in quantum computing is a 'black box' that marks target items by flipping their phase. For search problems, the oracle flips the phase of the target state |x⟩ → -|x⟩, setting up the amplitude amplification process."
         },
         {
-          topic: "Quantum Parallelism and Interference",
-          explanation: "Quantum algorithms leverage superposition to explore many possibilities simultaneously (quantum parallelism) and use interference to amplify correct answers while canceling wrong ones."
+          topic: "Amplitude Amplification Process",
+          explanation: "The diffusion operator reflects amplitudes about their average, combined with the oracle phase flip. This geometric rotation in the amplitude space systematically increases the probability of measuring the target state."
         }
       ],
       6: [
         {
-          topic: "Quantum Image Processing Potential",
-          explanation: "Quantum computing can theoretically process multiple image transformations in superposition, offering exponential speedups for certain image analysis tasks through quantum parallelism."
+          topic: "Quantum Speedup in Image Processing",
+          explanation: "Quantum algorithms can theoretically process multiple image transformations simultaneously through superposition, offering exponential speedups for certain operations like searching, pattern matching, and feature extraction."
         },
         {
-          topic: "Classical to Quantum State Conversion",
-          explanation: "A major challenge is efficiently encoding classical image data into quantum states while preserving information needed for processing. Various quantum image representations are being researched."
+          topic: "Quantum Edge Detection",
+          explanation: "Quantum edge detection algorithms use quantum operators to identify pixel intensity gradients. The quantum approach can potentially analyze multiple edge detection kernels in superposition, processing various edge types simultaneously."
         },
         {
           topic: "Quantum Pattern Recognition",
-          explanation: "Quantum entanglement could enable detection of correlated patterns across different parts of images simultaneously, potentially revolutionizing computer vision and AI applications."
+          explanation: "Quantum machine learning algorithms for pattern recognition in images leverage quantum entanglement and superposition to potentially recognize multiple patterns simultaneously, offering advantages in computer vision tasks."
         }
       ]
     };
 
-    return questions[levelId as keyof typeof questions] || questions[1];
+    return questionBank[levelId] || questionBank[1];
   };
 
-  // Generate story pages based on level content with integrated challenge concepts
+  // Generate story pages with more detailed quantum concepts
   const generateStoryPages = (level: QuantumLevel): StoryPage[] => {
     const challengeQuestions = getChallengeQuestions(level.id);
     
     const basePages: StoryPage[] = [
       {
         id: 1,
-        title: "The Journey Begins",
-        content: `Welcome to Level ${level.id}: ${level.title}. In this chapter of your quantum adventure, you'll discover the mysteries of ${level.concept}. Pay close attention to the concepts ahead - they will be essential for your upcoming challenge!`,
-        illustration: "intro",
+        title: "The Quantum Adventure Begins",
+        content: `Welcome, brave Quantum Warrior, to Level ${level.id}: ${level.title}!\n\nIn this chapter of your epic journey through the quantum realm, you will master the profound mysteries of ${level.concept}. The ancient quantum masters have left knowledge that will be essential for defeating the Quantum Villain.\n\nPrepare yourself, for the concepts ahead will challenge your understanding of reality itself!`,
+        illustration: "quantum_warrior_intro",
         concept: "Introduction"
       },
       {
         id: 2,
-        title: "The Story Unfolds",
+        title: "The Quantum Tale Unfolds",
         content: level.storyText,
-        illustration: getIllustrationKey(level.concept),
+        illustration: getAdvancedIllustrationKey(level.concept),
         concept: level.concept
       }
     ];
 
-    // Add pages for each challenge question with theoretical explanations
+    // Add detailed theoretical pages for each challenge concept
     const challengePages: StoryPage[] = challengeQuestions.map((question, index) => ({
       id: basePages.length + index + 1,
-      title: `Key Concept ${index + 1}: ${question.topic}`,
-      content: `${question.explanation}\n\nRemember this concept well - you'll need to apply this knowledge in your upcoming challenge! Understanding ${question.topic.toLowerCase()} is crucial for mastering ${level.concept}.`,
-      illustration: getQuestionIllustrationKey(question.topic),
+      title: `Quantum Wisdom ${index + 1}: ${question.topic}`,
+      content: `The ancient quantum scrolls reveal:\n\n${question.explanation}\n\nThis knowledge is crucial for your upcoming trial. The Quantum Villain will test your understanding of these very concepts. Study well, for mastery of ${question.topic.toLowerCase()} will determine your success in the quantum challenge ahead!`,
+      illustration: getConceptIllustrationKey(question.topic),
       concept: question.topic
     }));
 
-    // Add learning objective pages
+    // Add learning objectives as quest goals
     const learningPages: StoryPage[] = level.learningObjectives.map((objective, index) => ({
       id: basePages.length + challengePages.length + index + 1,
-      title: `Learning Goal ${index + 1}`,
-      content: `${objective}. This connects directly to the challenge concepts you've just learned about. Apply these principles when facing your test!`,
-      illustration: "learning",
-      concept: `Learning Objective ${index + 1}`
+      title: `Quest Objective ${index + 1}`,
+      content: `Your mission: ${objective}\n\nThis objective connects directly to the quantum principles you've learned. The Quantum Villain has crafted challenges that will test your mastery of these very concepts. Remember the theoretical foundations - they are your weapons in the battle ahead!`,
+      illustration: "quest_objective",
+      concept: `Quest ${index + 1}`
     }));
 
-    // Add final preparation page
+    // Final preparation page
     const finalPage: StoryPage = {
       id: basePages.length + challengePages.length + learningPages.length + 1,
-      title: "Ready for the Challenge",
-      content: `You now have all the theoretical knowledge needed to face the ${level.gameType} challenge ahead. You've learned about the key concepts that will be tested. Use your understanding of ${level.concept} to succeed! Remember the specific topics we covered - they will appear in your challenge.`,
-      illustration: "challenge",
-      concept: "Challenge Preparation"
+      title: "Ready for the Quantum Battle",
+      content: `You are now armed with the quantum knowledge necessary to face the ${level.gameType} challenge.\n\nYou have studied the theoretical foundations, understood the mathematical principles, and learned the practical applications. The Quantum Villain awaits, but you are prepared!\n\nRemember: Every question in your challenge relates directly to the concepts you've just mastered. Trust in your quantum wisdom!`,
+      illustration: "quantum_battle_ready",
+      concept: "Final Preparation"
     };
 
     return [...basePages, ...challengePages, ...learningPages, finalPage];
@@ -169,7 +169,6 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const totalPages = storyPages.length;
 
   useEffect(() => {
-    // Open book animation after component mounts
     setTimeout(() => setBookOpened(true), 500);
   }, []);
 
@@ -211,7 +210,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
             transformStyle: 'preserve-3d'
           }}
         >
-          {/* Book Spine/Cover */}
+          {/* Book Cover */}
           <div 
             className={`absolute inset-0 bg-gradient-to-br from-amber-700 to-amber-900 rounded-lg shadow-2xl transform transition-all duration-1000 ${
               bookOpened ? 'rotateY-90' : 'rotateY-0'
@@ -246,7 +245,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
           >
             {/* Page Content */}
             <div className="h-full flex">
-              {/* Left Page - SVG Illustration */}
+              {/* Left Page - Enhanced SVG Illustration */}
               <div className="w-1/2 p-6 border-r-2 border-amber-200 relative overflow-hidden bg-gradient-to-br from-purple-50 to-blue-50">
                 <div 
                   className={`transform transition-all duration-300 ${
@@ -254,7 +253,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                   }`}
                 >
                   <div className="h-full flex items-center justify-center">
-                    {renderSVGIllustration(storyPages[currentPage]?.illustration)}
+                    {renderAdvancedSVGIllustration(storyPages[currentPage]?.illustration)}
                   </div>
                 </div>
               </div>
@@ -270,7 +269,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                     <h3 className="text-xl font-bold text-amber-900 mb-4 text-center border-b-2 border-amber-300 pb-2">
                       {storyPages[currentPage]?.title}
                     </h3>
-                    <div className="text-amber-800 leading-relaxed text-sm space-y-3">
+                    <div className="text-amber-800 leading-relaxed text-sm space-y-3 overflow-y-auto max-h-80">
                       {storyPages[currentPage]?.content.split('\n\n').map((paragraph, idx) => (
                         <p key={idx} className="text-justify">{paragraph}</p>
                       ))}
@@ -279,16 +278,16 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full">
                     <div className="text-center">
-                      {renderSVGIllustration("challenge")}
-                      <h3 className="text-xl font-bold text-amber-900 mb-4 mt-4">Ready to Test Your Knowledge?</h3>
-                      <p className="text-sm text-amber-700 mb-6">You've learned all the concepts needed for this challenge!</p>
+                      {renderAdvancedSVGIllustration("quantum_battle_ready")}
+                      <h3 className="text-xl font-bold text-amber-900 mb-4 mt-4">Ready to Test Your Quantum Knowledge?</h3>
+                      <p className="text-sm text-amber-700 mb-6">You've mastered all the concepts needed for this challenge!</p>
                       <Button
                         onClick={handleStartChallenge}
                         size="lg"
                         className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                       >
                         <Play className="h-5 w-5 mr-2" />
-                        Start Challenge
+                        Start Quantum Challenge
                       </Button>
                     </div>
                   </div>
@@ -323,16 +322,15 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
               </Button>
             </div>
 
-            {/* Page Numbers */}
             <div className="absolute bottom-2 left-6 text-xs text-amber-600">
               {currentPage + 1}
             </div>
           </Card>
         </div>
 
-        {/* Floating Particles */}
+        {/* Floating Quantum Particles */}
         <div className="absolute inset-0 pointer-events-none">
-          {[...Array(10)].map((_, i) => (
+          {[...Array(15)].map((_, i) => (
             <div
               key={i}
               className="absolute w-2 h-2 bg-yellow-300 rounded-full opacity-60 animate-pulse"
@@ -350,272 +348,175 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   );
 };
 
-// Helper function to render SVG illustrations
-function renderSVGIllustration(key: string) {
+// Enhanced SVG illustrations with more accurate quantum representations
+function renderAdvancedSVGIllustration(key: string) {
   const illustrations: Record<string, JSX.Element> = {
-    intro: (
+    quantum_warrior_intro: (
       <svg width="300" height="400" viewBox="0 0 300 400" className="drop-shadow-lg">
         <defs>
-          <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <radialGradient id="warriorGradient" cx="50%" cy="50%" r="60%">
             <stop offset="0%" stopColor="#8B5CF6" />
-            <stop offset="100%" stopColor="#3B82F6" />
+            <stop offset="50%" stopColor="#3B82F6" />
+            <stop offset="100%" stopColor="#1E293B" />
+          </radialGradient>
+          <linearGradient id="swordGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFD700" />
+            <stop offset="100%" stopColor="#FFA500" />
           </linearGradient>
         </defs>
-        {/* Quantum Warrior Character */}
-        <circle cx="150" cy="120" r="40" fill="url(#heroGradient)" />
-        <circle cx="135" cy="110" r="5" fill="white" />
-        <circle cx="165" cy="110" r="5" fill="white" />
-        <path d="M140 130 Q150 140 160 130" stroke="white" strokeWidth="2" fill="none" />
-        <rect x="130" y="160" width="40" height="80" fill="url(#heroGradient)" rx="10" />
-        <rect x="110" y="170" width="20" height="60" fill="url(#heroGradient)" rx="10" />
-        <rect x="170" y="170" width="20" height="60" fill="url(#heroGradient)" rx="10" />
-        <rect x="135" y="240" width="15" height="50" fill="url(#heroGradient)" rx="7" />
-        <rect x="150" y="240" width="15" height="50" fill="url(#heroGradient)" rx="7" />
-        {/* Quantum Energy */}
-        <circle cx="80" cy="80" r="3" fill="#FFD700" opacity="0.8">
-          <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="220" cy="100" r="4" fill="#FF6B6B" opacity="0.8">
-          <animate attributeName="opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="90" cy="200" r="2" fill="#4ECDC4" opacity="0.8">
-          <animate attributeName="opacity" values="0.4;1;0.4" dur="2.5s" repeatCount="indefinite" />
-        </circle>
-        <text x="150" y="320" textAnchor="middle" fill="#6B46C1" fontSize="16" fontWeight="bold">Quantum Warrior</text>
+        {/* Quantum Warrior */}
+        <circle cx="150" cy="120" r="45" fill="url(#warriorGradient)" />
+        <circle cx="135" cy="110" r="6" fill="#00FFFF" />
+        <circle cx="165" cy="110" r="6" fill="#00FFFF" />
+        <path d="M135 130 Q150 145 165 130" stroke="#00FFFF" strokeWidth="3" fill="none" />
+        {/* Quantum Armor */}
+        <rect x="125" y="165" width="50" height="90" fill="url(#warriorGradient)" rx="15" />
+        <rect x="105" y="175" width="25" height="70" fill="url(#warriorGradient)" rx="12" />
+        <rect x="170" y="175" width="25" height="70" fill="url(#warriorGradient)" rx="12" />
+        {/* Quantum Sword */}
+        <rect x="200" y="100" width="8" height="80" fill="url(#swordGradient)" rx="4" />
+        <rect x="190" y="95" width="28" height="15" fill="url(#swordGradient)" rx="3" />
+        {/* Quantum Energy Aura */}
+        {[...Array(8)].map((_, i) => (
+          <circle key={i} cx={150 + Math.cos(i * Math.PI / 4) * 60} cy={180 + Math.sin(i * Math.PI / 4) * 60} r="4" fill="#00FFFF" opacity="0.6">
+            <animate attributeName="opacity" values="0.3;1;0.3" dur={`${1.5 + i * 0.2}s`} repeatCount="indefinite" />
+          </circle>
+        ))}
+        <text x="150" y="340" textAnchor="middle" fill="#6B46C1" fontSize="18" fontWeight="bold">Quantum Warrior</text>
       </svg>
     ),
-    qubit: (
+    quantum_superposition: (
       <svg width="300" height="400" viewBox="0 0 300 400" className="drop-shadow-lg">
         <defs>
-          <radialGradient id="qubitGradient" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#60A5FA" />
-            <stop offset="100%" stopColor="#3B82F6" />
-          </radialGradient>
+          <linearGradient id="superposGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#8B5CF6" />
+            <stop offset="25%" stopColor="#EC4899" />
+            <stop offset="50%" stopColor="#3B82F6" />
+            <stop offset="75%" stopColor="#10B981" />
+            <stop offset="100%" stopColor="#F59E0B" />
+          </linearGradient>
         </defs>
         {/* Bloch Sphere */}
         <circle cx="150" cy="200" r="80" fill="none" stroke="#3B82F6" strokeWidth="3" opacity="0.6" />
         <ellipse cx="150" cy="200" rx="80" ry="20" fill="none" stroke="#3B82F6" strokeWidth="2" opacity="0.4" />
         <line x1="70" y1="200" x2="230" y2="200" stroke="#3B82F6" strokeWidth="2" opacity="0.4" />
         <line x1="150" y1="120" x2="150" y2="280" stroke="#3B82F6" strokeWidth="2" opacity="0.4" />
-        {/* Qubit Vector */}
-        <line x1="150" y1="200" x2="190" y2="160" stroke="#FF6B6B" strokeWidth="4" markerEnd="url(#arrowhead)" />
-        <defs>
-          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#FF6B6B" />
-          </marker>
-        </defs>
-        {/* State Labels */}
-        <text x="150" y="110" textAnchor="middle" fill="#3B82F6" fontSize="14" fontWeight="bold">|0⟩</text>
-        <text x="150" y="295" textAnchor="middle" fill="#3B82F6" fontSize="14" fontWeight="bold">|1⟩</text>
-        <text x="150" y="330" textAnchor="middle" fill="#6B46C1" fontSize="16" fontWeight="bold">Qubit State</text>
-      </svg>
-    ),
-    superposition: (
-      <svg width="300" height="400" viewBox="0 0 300 400" className="drop-shadow-lg">
-        <defs>
-          <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#8B5CF6" />
-            <stop offset="50%" stopColor="#EC4899" />
-            <stop offset="100%" stopColor="#3B82F6" />
-          </linearGradient>
-        </defs>
-        {/* Wave Function */}
-        <path d="M50 200 Q100 150 150 200 T250 200" fill="none" stroke="url(#waveGradient)" strokeWidth="4">
-          <animate attributeName="d" values="M50 200 Q100 150 150 200 T250 200;M50 200 Q100 250 150 200 T250 200;M50 200 Q100 150 150 200 T250 200" dur="3s" repeatCount="indefinite" />
+        {/* Superposition Wave */}
+        <path d="M50 200 Q75 150 100 200 Q125 250 150 200 Q175 150 200 200 Q225 250 250 200" 
+              fill="none" stroke="url(#superposGradient)" strokeWidth="4">
+          <animate attributeName="d" 
+                   values="M50 200 Q75 150 100 200 Q125 250 150 200 Q175 150 200 200 Q225 250 250 200;
+                           M50 200 Q75 250 100 200 Q125 150 150 200 Q175 250 200 200 Q225 150 250 200;
+                           M50 200 Q75 150 100 200 Q125 250 150 200 Q175 150 200 200 Q225 250 250 200" 
+                   dur="3s" repeatCount="indefinite" />
         </path>
-        {/* Probability Amplitudes */}
-        <circle cx="80" cy="150" r="8" fill="#8B5CF6" opacity="0.8">
-          <animate attributeName="cy" values="150;250;150" dur="3s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="150" cy="200" r="10" fill="#EC4899" opacity="0.8">
-          <animate attributeName="r" values="10;15;10" dur="2s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="220" cy="150" r="8" fill="#3B82F6" opacity="0.8">
-          <animate attributeName="cy" values="150;250;150" dur="3s" repeatCount="indefinite" />
-        </circle>
-        <text x="150" y="100" textAnchor="middle" fill="#6B46C1" fontSize="14" fontWeight="bold">|0⟩ + |1⟩</text>
-        <text x="150" y="330" textAnchor="middle" fill="#6B46C1" fontSize="16" fontWeight="bold">Superposition</text>
+        {/* State Labels */}
+        <text x="150" y="110" textAnchor="middle" fill="#3B82F6" fontSize="16" fontWeight="bold">|0⟩</text>
+        <text x="150" y="295" textAnchor="middle" fill="#3B82F6" fontSize="16" fontWeight="bold">|1⟩</text>
+        <text x="150" y="340" textAnchor="middle" fill="#6B46C1" fontSize="16" fontWeight="bold">Quantum Superposition</text>
       </svg>
     ),
-    entanglement: (
+    quantum_entanglement: (
       <svg width="300" height="400" viewBox="0 0 300 400" className="drop-shadow-lg">
         <defs>
-          <linearGradient id="entangleGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <radialGradient id="entangle1" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#FF6B6B" />
             <stop offset="100%" stopColor="#4ECDC4" />
-          </linearGradient>
-          <linearGradient id="entangleGradient2" x1="0%" y1="100%" x2="100%" y2="0%">
+          </radialGradient>
+          <radialGradient id="entangle2" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#4ECDC4" />
             <stop offset="100%" stopColor="#FF6B6B" />
-          </linearGradient>
-        </defs>
-        {/* Two Entangled Particles */}
-        <circle cx="100" cy="150" r="25" fill="url(#entangleGradient1)" opacity="0.8">
-          <animate attributeName="r" values="25;30;25" dur="2s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="200" cy="250" r="25" fill="url(#entangleGradient2)" opacity="0.8">
-          <animate attributeName="r" values="25;30;25" dur="2s" repeatCount="indefinite" begin="1s" />
-        </circle>
-        {/* Entanglement Connection */}
-        <path d="M125 150 Q150 100 175 150 Q150 200 125 150" fill="none" stroke="#8B5CF6" strokeWidth="3" opacity="0.6">
-          <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" />
-        </path>
-        <path d="M125 150 Q150 300 175 250" fill="none" stroke="#8B5CF6" strokeWidth="3" opacity="0.6">
-          <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
-        </path>
-        {/* Spooky Action Lines */}
-        <line x1="90" y1="140" x2="210" y2="260" stroke="#FFD700" strokeWidth="2" opacity="0.4" strokeDasharray="5,5">
-          <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1s" repeatCount="indefinite" />
-        </line>
-        <text x="150" y="80" textAnchor="middle" fill="#6B46C1" fontSize="16" fontWeight="bold">Entangled Qubits</text>
-        <text x="150" y="350" textAnchor="middle" fill="#6B46C1" fontSize="14">Spooky Action at Distance</text>
-      </svg>
-    ),
-    gates: (
-      <svg width="300" height="400" viewBox="0 0 300 400" className="drop-shadow-lg">
-        <defs>
-          <linearGradient id="gateGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#10B981" />
-            <stop offset="100%" stopColor="#059669" />
-          </linearGradient>
-        </defs>
-        {/* Quantum Circuit */}
-        <line x1="50" y1="150" x2="250" y2="150" stroke="#374151" strokeWidth="3" />
-        <line x1="50" y1="250" x2="250" y2="250" stroke="#374151" strokeWidth="3" />
-        
-        {/* X Gate */}
-        <rect x="90" y="130" width="40" height="40" fill="url(#gateGradient)" rx="5" />
-        <text x="110" y="155" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">X</text>
-        
-        {/* H Gate */}
-        <rect x="170" y="130" width="40" height="40" fill="url(#gateGradient)" rx="5" />
-        <text x="190" y="155" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold">H</text>
-        
-        {/* CNOT Gate */}
-        <circle cx="110" cy="250" r="8" fill="#374151" />
-        <line x1="110" y1="170" x2="110" y2="250" stroke="#374151" strokeWidth="3" />
-        <circle cx="110" cy="250" r="15" fill="none" stroke="#374151" strokeWidth="3" />
-        <line x1="105" y1="250" x2="115" y2="250" stroke="#374151" strokeWidth="3" />
-        <line x1="110" y1="245" x2="110" y2="255" stroke="#374151" strokeWidth="3" />
-        
-        {/* Input/Output Labels */}
-        <text x="30" y="155" textAnchor="middle" fill="#374151" fontSize="12">|0⟩</text>
-        <text x="30" y="255" textAnchor="middle" fill="#374151" fontSize="12">|0⟩</text>
-        <text x="270" y="155" textAnchor="middle" fill="#374151" fontSize="12">|ψ⟩</text>
-        <text x="270" y="255" textAnchor="middle" fill="#374151" fontSize="12">|φ⟩</text>
-        
-        <text x="150" y="320" textAnchor="middle" fill="#6B46C1" fontSize="16" fontWeight="bold">Quantum Gates</text>
-      </svg>
-    ),
-    challenge: (
-      <svg width="300" height="400" viewBox="0 0 300 400" className="drop-shadow-lg">
-        <defs>
-          <radialGradient id="challengeGradient" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#F59E0B" />
-            <stop offset="100%" stopColor="#D97706" />
           </radialGradient>
         </defs>
-        {/* Trophy */}
-        <ellipse cx="150" cy="200" rx="60" ry="40" fill="url(#challengeGradient)" />
-        <rect x="130" y="240" width="40" height="60" fill="url(#challengeGradient)" rx="5" />
-        <rect x="120" y="300" width="60" height="20" fill="#92400E" rx="10" />
-        {/* Trophy Handles */}
-        <ellipse cx="90" cy="180" rx="15" ry="25" fill="none" stroke="url(#challengeGradient)" strokeWidth="8" />
-        <ellipse cx="210" cy="180" rx="15" ry="25" fill="none" stroke="url(#challengeGradient)" strokeWidth="8" />
-        {/* Stars */}
-        <polygon points="150,160 155,170 165,170 157,177 160,187 150,180 140,187 143,177 135,170 145,170" fill="#FFD700">
-          <animate attributeName="opacity" values="0.5;1;0.5" dur="1s" repeatCount="indefinite" />
-        </polygon>
-        <polygon points="110,120 113,126 119,126 114,130 116,136 110,132 104,136 106,130 101,126 107,126" fill="#FFD700">
-          <animate attributeName="opacity" values="1;0.5;1" dur="1.2s" repeatCount="indefinite" />
-        </polygon>
-        <polygon points="190,120 193,126 199,126 194,130 196,136 190,132 184,136 186,130 181,126 187,126" fill="#FFD700">
-          <animate attributeName="opacity" values="0.7;1;0.7" dur="0.8s" repeatCount="indefinite" />
-        </polygon>
-        <text x="150" y="350" textAnchor="middle" fill="#6B46C1" fontSize="16" fontWeight="bold">Ready for Challenge!</text>
+        {/* Entangled Qubits */}
+        <circle cx="100" cy="150" r="30" fill="url(#entangle1)" opacity="0.8">
+          <animate attributeName="r" values="30;35;30" dur="2s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="200" cy="250" r="30" fill="url(#entangle2)" opacity="0.8">
+          <animate attributeName="r" values="30;35;30" dur="2s" repeatCount="indefinite" begin="1s" />
+        </circle>
+        {/* Quantum Correlation Lines */}
+        <path d="M130 150 Q150 100 170 150 Q150 200 130 150" fill="none" stroke="#8B5CF6" strokeWidth="4" opacity="0.7">
+          <animate attributeName="opacity" values="0.3;1;0.3" dur="1.5s" repeatCount="indefinite" />
+        </path>
+        <path d="M130 150 Q150 300 170 250" fill="none" stroke="#EC4899" strokeWidth="4" opacity="0.7">
+          <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite" />
+        </path>
+        {/* Bell State Notation */}
+        <text x="150" y="80" textAnchor="middle" fill="#6B46C1" fontSize="14" fontWeight="bold">|Φ+⟩ = (|00⟩ + |11⟩)/√2</text>
+        <text x="150" y="350" textAnchor="middle" fill="#6B46C1" fontSize="16" fontWeight="bold">Quantum Entanglement</text>
       </svg>
     ),
-    learning: (
-      <svg width="300" height="400" viewBox="0 0 300 400" className="drop-shadow-lg">
+    quantum_battle_ready: (
+      <svg width="200" height="200" viewBox="0 0 200 200" className="drop-shadow-lg">
         <defs>
-          <linearGradient id="bookGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#7C3AED" />
-            <stop offset="100%" stopColor="#5B21B6" />
-          </linearGradient>
+          <radialGradient id="battleGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#F59E0B" />
+            <stop offset="100%" stopColor="#DC2626" />
+          </radialGradient>
         </defs>
-        {/* Open Book */}
-        <path d="M50 150 Q150 120 250 150 L250 280 Q150 250 50 280 Z" fill="url(#bookGradient)" opacity="0.8" />
-        <path d="M50 150 Q150 120 250 150 L250 160 Q150 130 50 160 Z" fill="#8B5CF6" opacity="0.6" />
-        {/* Book Pages */}
-        <rect x="70" y="170" width="60" height="80" fill="white" opacity="0.9" rx="2" />
-        <rect x="170" y="170" width="60" height="80" fill="white" opacity="0.9" rx="2" />
-        {/* Text Lines */}
-        <line x1="75" y1="180" x2="120" y2="180" stroke="#374151" strokeWidth="2" />
-        <line x1="75" y1="190" x2="125" y2="190" stroke="#374151" strokeWidth="2" />
-        <line x1="75" y1="200" x2="115" y2="200" stroke="#374151" strokeWidth="2" />
-        <line x1="175" y1="180" x2="220" y2="180" stroke="#374151" strokeWidth="2" />
-        <line x1="175" y1="190" x2="225" y2="190" stroke="#374151" strokeWidth="2" />
-        <line x1="175" y1="200" x2="215" y2="200" stroke="#374151" strokeWidth="2" />
-        {/* Learning Bulb */}
-        <circle cx="150" cy="100" r="20" fill="#FCD34D" opacity="0.8">
-          <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite" />
+        {/* Battle Ready Symbol */}
+        <circle cx="100" cy="100" r="80" fill="url(#battleGradient)" opacity="0.8">
+          <animate attributeName="r" values="80;85;80" dur="1.5s" repeatCount="indefinite" />
         </circle>
-        <rect x="145" y="120" width="10" height="15" fill="#92400E" rx="2" />
-        <text x="150" y="320" textAnchor="middle" fill="#6B46C1" fontSize="16" fontWeight="bold">Learn & Grow</text>
+        <polygon points="100,40 120,80 160,80 130,110 140,150 100,130 60,150 70,110 40,80 80,80" fill="#FFD700">
+          <animate attributeName="opacity" values="0.7;1;0.7" dur="1s" repeatCount="indefinite" />
+        </polygon>
+        <text x="100" y="190" textAnchor="middle" fill="#6B46C1" fontSize="14" fontWeight="bold">Ready for Battle!</text>
       </svg>
     )
   };
 
-  return illustrations[key] || illustrations.intro;
+  return illustrations[key] || illustrations.quantum_warrior_intro;
 }
 
-// Helper functions for mapping concepts to illustration keys
-function getIllustrationKey(concept: string): string {
+// Helper functions for more accurate illustration mapping
+function getAdvancedIllustrationKey(concept: string): string {
   const conceptMap: Record<string, string> = {
-    'Classical vs Quantum': 'intro',
-    'Quantum Basics': 'qubit',
-    'Wave-Particle Duality': 'superposition',
-    'Quantum Probability': 'qubit',
-    'Superposition Paradox': 'superposition',
-    'Heisenberg Uncertainty': 'superposition',
-    'Discrete Energy States': 'qubit',
-    'Quantum Light': 'superposition',
-    'Computing Paradigms': 'gates',
-    'Quantum Revolution': 'challenge',
-    'Quantum Bit Basics': 'qubit',
-    'Qubit Visualization': 'qubit',
-    'Computational Basis': 'qubit',
-    'Linear Combinations': 'superposition',
-    'Quantum Measurement': 'qubit',
-    'Quantum Phase': 'superposition',
-    'Multi-Qubit Systems': 'entanglement',
-    'State Preparation': 'gates',
-    'Quantum Coherence': 'superposition',
-    'Qubit Technologies': 'gates'
+    'Classical vs Quantum': 'quantum_warrior_intro',
+    'Quantum Basics': 'quantum_superposition',
+    'Wave-Particle Duality': 'quantum_superposition',
+    'Quantum Probability': 'quantum_superposition',
+    'Superposition Paradox': 'quantum_superposition',
+    'Heisenberg Uncertainty': 'quantum_superposition',
+    'Discrete Energy States': 'quantum_superposition',
+    'Quantum Light': 'quantum_superposition',
+    'Computing Paradigms': 'quantum_gates',
+    'Quantum Revolution': 'quantum_battle_ready',
+    'Quantum Bit Basics': 'quantum_superposition',
+    'Qubit Visualization': 'quantum_superposition',
+    'Computational Basis': 'quantum_superposition',
+    'Linear Combinations': 'quantum_superposition',
+    'Quantum Measurement': 'quantum_superposition',
+    'Quantum Phase': 'quantum_superposition',
+    'Multi-Qubit Systems': 'quantum_entanglement',
+    'State Preparation': 'quantum_gates',
+    'Quantum Coherence': 'quantum_superposition',
+    'Qubit Technologies': 'quantum_gates'
   };
-  return conceptMap[concept] || 'intro';
+  return conceptMap[concept] || 'quantum_warrior_intro';
 }
 
-function getQuestionIllustrationKey(topic: string): string {
+function getConceptIllustrationKey(topic: string): string {
   const topicMap: Record<string, string> = {
-    'What is a Qubit?': 'qubit',
-    'Understanding Superposition': 'superposition',
-    'The Measurement Process': 'qubit',
-    'The X Gate (NOT Gate)': 'gates',
-    'Creating Superposition with Hadamard': 'gates',
-    'Gate Sequences and Reversibility': 'gates',
-    'What is Quantum Entanglement?': 'entanglement',
-    "Einstein's 'Spooky Action'": 'entanglement',
-    'Bell States - Maximum Entanglement': 'entanglement',
-    'Understanding Pixels': 'learning',
-    'RGB Color Model': 'learning',
-    'Image Filtering Fundamentals': 'learning',
-    "Grover's Search Algorithm": 'gates',
-    "Shor's Factoring Algorithm": 'gates',
-    'Quantum Parallelism and Interference': 'superposition',
-    'Quantum Image Processing Potential': 'learning',
-    'Classical to Quantum State Conversion': 'gates',
-    'Quantum Pattern Recognition': 'learning'
+    'What is a Qubit?': 'quantum_superposition',
+    'Understanding Superposition': 'quantum_superposition',
+    'Quantum Measurement': 'quantum_superposition',
+    'Pauli-X Gate (NOT Gate)': 'quantum_gates',
+    'Hadamard Gate - Creating Superposition': 'quantum_gates',
+    'Gate Unitarity and Reversibility': 'quantum_gates',
+    'Quantum Entanglement Fundamentals': 'quantum_entanglement',
+    'Bell States and Maximum Entanglement': 'quantum_entanglement',
+    'CNOT Gate for Entanglement Creation': 'quantum_entanglement',
+    'Classical vs Quantum Image Representation': 'quest_objective',
+    'Quantum Image Encoding Schemes': 'quest_objective',
+    'Quantum Fourier Transform for Images': 'quest_objective',
+    "Grover's Search Algorithm Mechanics": 'quantum_gates',
+    'Quantum Oracle Functions': 'quantum_gates',
+    'Amplitude Amplification Process': 'quantum_superposition',
+    'Quantum Speedup in Image Processing': 'quest_objective',
+    'Quantum Edge Detection': 'quest_objective',
+    'Quantum Pattern Recognition': 'quest_objective'
   };
-  return topicMap[topic] || 'learning';
+  return topicMap[topic] || 'quest_objective';
 }
