@@ -1,110 +1,213 @@
 
 import { type QuantumLevel } from '@/data/quantumLevels';
 
-export const getEnhancedTheoryContent = (level: QuantumLevel): string => {
-  const theoryContent: Record<number, string> = {
+const GEMINI_API_KEY = 'AIzaSyDp1_tOfLEFj-SuZkkJ_HudDvR60huRijE';
+
+export const generateTheoryContent = async (level: QuantumLevel): Promise<string> => {
+  try {
+    const prompt = `Generate comprehensive educational theory content for Level ${level.id}: ${level.title}. 
+    
+    Topic: ${level.concept}
+    Context: ${level.storyText}
+    
+    Please create detailed educational content that covers:
+    1. Fundamental concepts and definitions
+    2. Mathematical foundations (if applicable)
+    3. Real-world applications and examples
+    4. Key principles and properties
+    5. Advanced insights and connections to other quantum concepts
+    
+    Format the content with clear headings and well-structured paragraphs. Make it educational, engaging, and appropriate for learning quantum computing concepts at this level.
+    
+    Length: Approximately 400-600 words.`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error('Error generating theory content:', error);
+    return getFallbackTheoryContent(level);
+  }
+};
+
+export const generateQuizQuestions = async (level: QuantumLevel): Promise<Array<{
+  question: string;
+  options: string[];
+  correct: number;
+  explanation: string;
+}>> => {
+  try {
+    const prompt = `Generate 3 multiple-choice quiz questions for Level ${level.id}: ${level.title}.
+    
+    Topic: ${level.concept}
+    Context: ${level.storyText}
+    
+    For each question, provide:
+    1. A clear, specific question about the topic
+    2. Four multiple choice options (A, B, C, D)
+    3. The correct answer (indicate which option)
+    4. A brief explanation of why the answer is correct
+    
+    Format as JSON array with this structure:
+    [
+      {
+        "question": "Question text here?",
+        "options": ["Option A", "Option B", "Option C", "Option D"],
+        "correct": 0,
+        "explanation": "Explanation here"
+      }
+    ]
+    
+    Make questions educational and appropriate for the quantum computing level.`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.8,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const responseText = data.candidates[0].content.parts[0].text;
+    
+    // Extract JSON from the response
+    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    
+    throw new Error('Could not parse quiz questions from API response');
+  } catch (error) {
+    console.error('Error generating quiz questions:', error);
+    return getFallbackQuestions(level);
+  }
+};
+
+const getFallbackTheoryContent = (level: QuantumLevel): string => {
+  const fallbackContent: Record<number, string> = {
     1: `CLASSICAL VS QUANTUM COMPUTING: THE FUNDAMENTAL PARADIGM SHIFT
 
 Classical Computing Foundation:
 Classical computers process information using bits - fundamental units that exist in definite states of either 0 or 1. This binary system forms the backbone of all classical computation, where logic gates perform deterministic operations on these well-defined states.
 
 The Quantum Revolution:
-Quantum computing introduces qubits (quantum bits) that can exist in superposition - a fundamental quantum phenomenon where a particle simultaneously occupies multiple states. Unlike classical bits, qubits can be in a combination of |0⟩ and |1⟩ states, mathematically represented as α|0⟩ + β|1⟩, where α and β are complex probability amplitudes.
+Quantum computing introduces qubits (quantum bits) that can exist in superposition - a fundamental quantum phenomenon where a particle simultaneously occupies multiple states. Unlike classical bits, qubits can be in a combination of |0⟩ and |1⟩ states, mathematically represented as α|0⟩ + β|1⟩, where α and β are complex probability amplitudes.`,
 
-Computational Implications:
-While classical computers process information sequentially through deterministic pathways, quantum computers leverage superposition to explore multiple computational paths simultaneously. This quantum parallelism, combined with phenomena like entanglement and interference, enables certain quantum algorithms to achieve exponential speedups over their classical counterparts.
-
-Measurement and Reality:
-The act of measurement in quantum systems causes wavefunction collapse, forcing the qubit into a definite classical state. This fundamental difference between quantum computation (probabilistic) and classical computation (deterministic) represents one of the most profound shifts in computational thinking.`,
-
-    2: `QUBITS AND SUPERPOSITION: THE HEART OF QUANTUM COMPUTATION
+    2: `QUBITS AND SUPERPOSITION: QUANTUM STATES EXPLAINED
 
 Mathematical Foundation:
-A qubit state |ψ⟩ = α|0⟩ + β|1⟩ represents a unit vector in a two-dimensional complex vector space called a Hilbert space. The coefficients α and β are complex numbers satisfying the normalization condition |α|² + |β|² = 1, ensuring that the total probability equals one.
+A qubit state |ψ⟩ = α|0⟩ + β|1⟩ represents a unit vector in a two-dimensional complex vector space. The coefficients α and β are complex numbers satisfying |α|² + |β|² = 1.
 
 Bloch Sphere Representation:
-Any qubit state can be visualized on the Bloch sphere - a geometric representation where the north and south poles represent the computational basis states |0⟩ and |1⟩. Points on the sphere's surface represent all possible qubit states, with the equator containing equal superposition states like (|0⟩ + |1⟩)/√2.
+Any qubit state can be visualized on the Bloch sphere where computational basis states |0⟩ and |1⟩ are at the poles, and superposition states exist across the sphere's surface.`,
 
-Physical Implementations:
-Qubits can be physically realized using various quantum systems: electron spin in quantum dots, photon polarization, atomic energy levels, or superconducting circuits. Each implementation has unique advantages in terms of coherence time, gate fidelity, and scalability.
-
-Coherence and Decoherence:
-Quantum superposition is fragile and susceptible to environmental interference, leading to decoherence - the gradual loss of quantum properties. Maintaining coherence requires sophisticated error correction and isolation techniques, making quantum computation a delicate balance between harnessing quantum effects and preserving them from environmental noise.
-
-Measurement Statistics:
-When measuring a qubit in superposition α|0⟩ + β|1⟩, the probability of obtaining outcome 0 is |α|² and outcome 1 is |β|². The measurement process is fundamentally probabilistic, distinguishing quantum computation from classical deterministic operations.`,
-
-    3: `QUANTUM GATES AND OPERATIONS: MANIPULATING QUANTUM REALITY
+    3: `QUANTUM GATES AND CIRCUIT OPERATIONS
 
 Universal Gate Sets:
-Quantum computation relies on quantum gates - unitary operations that reversibly transform qubit states. A universal gate set can approximate any quantum operation to arbitrary precision. The Clifford+T gate set, consisting of Hadamard (H), Phase (S), CNOT, and T gates, provides universal quantum computation.
+Quantum computation relies on quantum gates - unitary operations that reversibly transform qubit states. The Clifford+T gate set provides universal quantum computation capability.
 
-Single-Qubit Gates:
-The Hadamard gate H transforms |0⟩ → (|0⟩ + |1⟩)/√2 and |1⟩ → (|0⟩ - |1⟩)/√2, creating superposition states. Pauli gates (X, Y, Z) perform rotations around different axes of the Bloch sphere: X-gate flips computational basis states, Y-gate performs a combined flip and phase rotation, while Z-gate applies a phase flip to |1⟩.
+Single-Qubit Operations:
+Hadamard gates create superposition, Pauli gates perform rotations, and phase gates modify quantum phases without changing probability amplitudes.`,
 
-Two-Qubit Gates:
-The CNOT (Controlled-NOT) gate creates entanglement between qubits, applying an X-gate to the target qubit conditional on the control qubit being |1⟩. This gate is essential for creating multi-qubit entangled states and implementing quantum algorithms.
-
-Quantum Circuit Model:
-Quantum algorithms are represented as quantum circuits - sequences of quantum gates applied to qubits over time. The circuit model provides a framework for designing and analyzing quantum algorithms, with circuit depth and gate count determining computational complexity.
-
-Gate Fidelity and Errors:
-Real quantum gates suffer from imperfections due to environmental noise, control errors, and fundamental physical limitations. Gate fidelity measures how closely a physical gate approximates the ideal mathematical operation, with error rates typically ranging from 0.1% to 1% in current quantum devices.`,
-
-    4: `DIGITAL IMAGE PROCESSING: FOUNDATIONS FOR QUANTUM ENHANCEMENT
+    4: `DIGITAL IMAGE PROCESSING FUNDAMENTALS
 
 Pixel-Based Representation:
-Digital images consist of discrete picture elements (pixels) arranged in a grid structure. Each pixel contains color information encoded in various formats: RGB (Red, Green, Blue) for color images, or grayscale values for monochrome images. Image dimensions (width × height × color channels) determine the total data size.
+Digital images consist of discrete picture elements arranged in grid structures, with color information encoded in various formats like RGB or grayscale values.
 
-Color Spaces and Encoding:
-RGB color space represents colors as combinations of red, green, and blue intensities, typically using 8 bits per channel (0-255 range). Other color spaces like HSV (Hue, Saturation, Value) and CMYK (Cyan, Magenta, Yellow, Key/Black) serve specific applications in image processing and printing.
+Processing Techniques:
+Image enhancement involves filtering, convolution operations, histogram equalization, and morphological transformations to improve visual quality.`,
 
-Spatial and Frequency Domains:
-Image processing operates in both spatial domain (direct pixel manipulation) and frequency domain (using transforms like Fourier Transform). Frequency domain analysis reveals periodic patterns and enables efficient filtering operations for noise reduction, compression, and feature extraction.
-
-Filtering and Convolution:
-Digital filters modify images through convolution operations - mathematical processes that combine input pixels with filter kernels to produce output pixels. Common filters include Gaussian blur (noise reduction), Sobel edge detection, and sharpening filters that enhance specific image features.
-
-Image Enhancement Techniques:
-Histogram equalization improves image contrast by redistributing pixel intensities. Morphological operations (dilation, erosion) modify object shapes and sizes. Edge detection algorithms identify boundaries between different regions, essential for computer vision and pattern recognition applications.`,
-
-    5: `QUANTUM ALGORITHMS: EXPONENTIAL ADVANTAGES IN COMPUTATION
+    5: `QUANTUM ALGORITHMS AND COMPUTATIONAL ADVANTAGES
 
 Grover's Search Algorithm:
-Grover's algorithm provides quadratic speedup for unstructured search problems. While classical algorithms require O(N) time to search unsorted databases, Grover's algorithm achieves O(√N) complexity through amplitude amplification - a technique that increases the probability of measuring correct answers while decreasing incorrect ones.
-
-Amplitude Amplification Process:
-The algorithm works by applying a sequence of unitary operations: oracle marking (inverting the amplitude of target states) followed by diffusion operator (reflecting about the average amplitude). This process geometrically rotates the state vector toward the target state, requiring approximately π/4 × √N iterations.
-
-Shor's Factoring Algorithm:
-Shor's algorithm factors large integers exponentially faster than known classical algorithms by exploiting the quantum Fourier transform to find periods in modular exponentiation. The algorithm's polynomial-time complexity threatens RSA encryption, motivating the development of post-quantum cryptography.
-
-Quantum Fourier Transform:
-The QFT is the quantum analog of the discrete Fourier transform, operating on quantum superposition states. It transforms computational basis states to Fourier basis states, enabling efficient period finding and solving hidden subgroup problems in various mathematical structures.
+Provides quadratic speedup for unstructured search problems through amplitude amplification, requiring only O(√N) operations compared to classical O(N).
 
 Quantum Speedup Sources:
-Quantum algorithms achieve advantages through quantum parallelism (superposition enables simultaneous exploration of multiple solution paths), quantum interference (constructive/destructive interference amplifies correct answers), and entanglement (creates correlations impossible in classical systems).`,
+Quantum algorithms achieve advantages through superposition enabling parallel exploration, quantum interference amplifying correct answers, and entanglement creating impossible classical correlations.`,
 
-    6: `QUANTUM IMAGE PROCESSING: CONVERGENCE OF QUANTUM AND VISUAL COMPUTING
+    6: `QUANTUM IMAGE PROCESSING: NEXT-GENERATION COMPUTING
 
 Quantum Image Representations:
-Quantum image processing requires encoding classical pixel data into quantum states. The Flexible Representation of Quantum Images (FRQI) encodes grayscale images as quantum superposition states, where pixel positions are encoded in computational basis states and intensities are encoded as rotation angles.
+FRQI and NEQR encodings store classical pixel data in quantum superposition states, enabling parallel processing of multiple image regions simultaneously.
 
-NEQR and Enhanced Representations:
-Novel Enhanced Quantum Representation (NEQR) improves upon FRQI by storing pixel intensities directly in quantum states rather than angles, enabling more efficient quantum operations. Multi-Channel Representation for Quantum Images (MCRQI) extends these concepts to color images with RGB channels.
-
-Quantum Image Operations:
-Basic quantum image operations include geometric transformations (rotation, scaling, translation) implemented through quantum gates, color manipulations using controlled rotations, and filtering operations leveraging quantum superposition to process multiple image regions simultaneously.
-
-Entanglement in Image Processing:
-Quantum entanglement enables novel image processing capabilities: entangled pixels can exhibit correlations impossible in classical systems, potentially enabling parallel feature detection across spatially separated image regions and enhanced pattern recognition through quantum interference.
-
-Quantum Speedup Potential:
-Theoretical quantum image processing algorithms promise exponential speedups for specific tasks: quantum pattern matching using Grover-like algorithms, quantum principal component analysis for image compression, and quantum machine learning approaches for image classification and recognition.
-
-Challenges and Future Directions:
-Current quantum image processing faces significant challenges: efficient classical-to-quantum data encoding, noise resilience in intermediate-scale quantum devices, and developing quantum algorithms that demonstrate clear advantages over classical methods. Future developments may include quantum convolutional neural networks and quantum-enhanced computer vision systems.`
+Future Applications:
+Quantum-enhanced computer vision, pattern recognition with exponential speedups, and quantum machine learning for advanced image analysis tasks.`
   };
   
-  return theoryContent[level.id] || theoryContent[1];
+  return fallbackContent[level.id] || fallbackContent[1];
+};
+
+const getFallbackQuestions = (level: QuantumLevel) => {
+  const fallbackQuestions: Record<number, Array<{
+    question: string;
+    options: string[];
+    correct: number;
+    explanation: string;
+  }>> = {
+    1: [{
+      question: "What is the fundamental difference between classical bits and qubits?",
+      options: [
+        "Qubits can only be 0 or 1",
+        "Qubits can be in superposition of 0 and 1",
+        "Qubits are faster than bits",
+        "Qubits use less energy"
+      ],
+      correct: 1,
+      explanation: "Qubits can exist in superposition, meaning they can be in a combination of both 0 and 1 states simultaneously, unlike classical bits which are definitively either 0 or 1."
+    }],
+    2: [{
+      question: "What does the Bloch sphere represent in quantum computing?",
+      options: [
+        "The speed of quantum operations",
+        "All possible states of a single qubit",
+        "The energy levels of quantum systems",
+        "The error rates in quantum computers"
+      ],
+      correct: 1,
+      explanation: "The Bloch sphere is a geometric representation of all possible pure states of a single qubit, with computational basis states |0⟩ and |1⟩ at the poles."
+    }],
+    // Add more fallback questions for other levels...
+  };
+  
+  return fallbackQuestions[level.id] || fallbackQuestions[1];
 };

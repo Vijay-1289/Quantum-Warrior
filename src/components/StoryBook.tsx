@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Play, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, BookOpen, Loader2 } from 'lucide-react';
 import { type QuantumLevel } from '@/data/quantumLevels';
 import { getIllustrationComponent } from '@/components/SVGIllustrations';
-import { getEnhancedTheoryContent } from '@/utils/theoryContent';
+import { generateTheoryContent } from '@/utils/theoryContent';
 
 interface StoryPage {
   id: number;
@@ -14,6 +13,7 @@ interface StoryPage {
   illustration: string;
   concept: string;
   isTheoryPage?: boolean;
+  isLoading?: boolean;
 }
 
 interface StoryBookProps {
@@ -25,12 +25,13 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
   const [bookOpened, setBookOpened] = useState(false);
+  const [storyPages, setStoryPages] = useState<StoryPage[]>([]);
+  const [theoryContent, setTheoryContent] = useState<string>('');
+  const [isLoadingTheory, setIsLoadingTheory] = useState(false);
 
-  // Generate story pages with enhanced theory content
-  const generateStoryPages = (level: QuantumLevel): StoryPage[] => {
-    const enhancedTheory = getEnhancedTheoryContent(level);
-    
-    const pages: StoryPage[] = [
+  // Generate initial story pages
+  const generateInitialPages = (level: QuantumLevel): StoryPage[] => {
+    return [
       {
         id: 1,
         title: "The Quantum Adventure Begins",
@@ -48,10 +49,11 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
       {
         id: 3,
         title: `Mastering ${level.concept}`,
-        content: enhancedTheory,
+        content: '',
         illustration: getAdvancedIllustrationKey(level.concept),
         concept: "Detailed Theory",
-        isTheoryPage: true
+        isTheoryPage: true,
+        isLoading: true
       },
       {
         id: 4,
@@ -61,16 +63,47 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
         concept: "Final Preparation"
       }
     ];
-
-    return pages;
   };
 
-  const storyPages = generateStoryPages(level);
-  const totalPages = storyPages.length;
-
   useEffect(() => {
+    const initialPages = generateInitialPages(level);
+    setStoryPages(initialPages);
     setTimeout(() => setBookOpened(true), 500);
-  }, []);
+
+    // Generate theory content when component mounts
+    const loadTheoryContent = async () => {
+      setIsLoadingTheory(true);
+      try {
+        const content = await generateTheoryContent(level);
+        setTheoryContent(content);
+        
+        // Update the theory page with generated content
+        setStoryPages(prevPages => 
+          prevPages.map(page => 
+            page.isTheoryPage 
+              ? { ...page, content, isLoading: false }
+              : page
+          )
+        );
+      } catch (error) {
+        console.error('Failed to generate theory content:', error);
+        // Keep fallback content on error
+        setStoryPages(prevPages => 
+          prevPages.map(page => 
+            page.isTheoryPage 
+              ? { ...page, content: "Loading theory content...", isLoading: false }
+              : page
+          )
+        );
+      } finally {
+        setIsLoadingTheory(false);
+      }
+    };
+
+    loadTheoryContent();
+  }, [level]);
+
+  const totalPages = storyPages.length;
 
   const handleNextPage = () => {
     if (currentPage < totalPages - 1 && !isFlipping) {
@@ -105,6 +138,14 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
     const IllustrationComponent = getIllustrationComponent(illustrationKey);
     return <IllustrationComponent />;
   };
+
+  if (!currentPageData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
@@ -179,20 +220,32 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                     <h3 className="text-xl font-bold text-amber-900 mb-4 text-center border-b-2 border-amber-300 pb-2">
                       {currentPageData?.title}
                     </h3>
-                    <div className={`text-amber-800 leading-relaxed text-sm space-y-3 overflow-y-auto ${
-                      currentPageData?.isTheoryPage ? 'max-h-96' : 'max-h-80'
-                    }`}>
-                      {currentPageData?.content.split('\n\n').map((paragraph, idx) => (
-                        <p key={idx} className="text-justify animate-fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
-                          {paragraph}
-                        </p>
-                      ))}
-                    </div>
+                    
+                    {/* Loading state for theory page */}
+                    {currentPageData?.isLoading ? (
+                      <div className="flex items-center justify-center h-64">
+                        <div className="text-center">
+                          <Loader2 className="h-8 w-8 animate-spin text-amber-600 mx-auto mb-4" />
+                          <p className="text-amber-700">Generating personalized theory content...</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`text-amber-800 leading-relaxed text-sm space-y-3 overflow-y-auto ${
+                        currentPageData?.isTheoryPage ? 'max-h-96' : 'max-h-80'
+                      }`}>
+                        {currentPageData?.content.split('\n\n').map((paragraph, idx) => (
+                          <p key={idx} className="text-justify animate-fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
+                            {paragraph}
+                          </p>
+                        ))}
+                      </div>
+                    )}
                     
                     {/* Enhanced Theory Page Indicator */}
                     {currentPageData?.isTheoryPage && (
-                      <div className="absolute bottom-4 right-6 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">
-                        Theory Deep Dive
+                      <div className="absolute bottom-4 right-6 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-2">
+                        <span>AI Generated Theory</span>
+                        {isLoadingTheory && <Loader2 className="h-3 w-3 animate-spin" />}
                       </div>
                     )}
                   </div>
