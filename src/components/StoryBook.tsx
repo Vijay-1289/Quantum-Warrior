@@ -347,26 +347,19 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
           {[...Array(20)].map((_, i) => (
             <div
               key={i}
-              className={`absolute w-2 h-2 rounded-full opacity-60 ${
+              className={`absolute w-2 h-2 rounded-full opacity-60 animate-bounce ${
                 i % 3 === 0 ? 'bg-yellow-300' : i % 3 === 1 ? 'bg-blue-300' : 'bg-purple-300'
               }`}
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                animation: `float ${2 + Math.random() * 3}s ease-in-out infinite`,
-                animationDelay: `${Math.random() * 2}s`
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${2 + Math.random() * 3}s`
               }}
             />
           ))}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) scale(1); opacity: 0.6; }
-          50% { transform: translateY(-20px) scale(1.1); opacity: 0.8; }
-        }
-      `}</style>
     </div>
   );
 };
