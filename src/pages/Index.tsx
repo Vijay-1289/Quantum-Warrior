@@ -21,6 +21,13 @@ const Index = () => {
     }
   }, []);
 
+  // Calculate player stats from progress
+  const playerStats = {
+    quantumKnowledge: playerProgress.completedLevels.length * 20,
+    imageProcessing: Math.floor(playerProgress.totalStars * 10),
+    totalScore: playerProgress.totalStars
+  };
+
   const handleStartJourney = () => {
     setShowRoadmap(false);
     navigate('/story-board');
@@ -36,7 +43,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
-      <GameHero onStartJourney={handleShowRoadmap} />
+      <GameHero 
+        playerStats={playerStats}
+        onStartStory={handleShowRoadmap}
+      />
       
       {showRoadmap && (
         <QuantumRoadmap
