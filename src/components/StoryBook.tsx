@@ -26,11 +26,12 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [isFlipping, setIsFlipping] = useState(false);
   const [bookOpened, setBookOpened] = useState(false);
   const [storyPages, setStoryPages] = useState<StoryPage[]>([]);
-  const [theoryContent, setTheoryContent] = useState<string>('');
-  const [isLoadingTheory, setIsLoadingTheory] = useState(false);
+  const [theoryGenerated, setTheoryGenerated] = useState(false);
 
   // Generate initial story pages
   const generateInitialPages = (level: QuantumLevel): StoryPage[] => {
+    console.log(`Creating story pages for Level ${level.id}: ${level.title}`);
+    
     return [
       {
         id: 1,
@@ -42,7 +43,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
       {
         id: 2,
         title: "The Quantum Tale Unfolds",
-        content: `${level.storyText}\n\nNow, let us delve deeper into the quantum principles that govern this realm...`,
+        content: `${level.storyText}\n\nNow, let us delve deeper into the quantum principles that govern this realm. The knowledge you're about to gain will be crucial for your upcoming challenge.`,
         illustration: getAdvancedIllustrationKey(level.concept),
         concept: level.concept
       },
@@ -66,42 +67,52 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   };
 
   useEffect(() => {
+    console.log(`StoryBook mounted for Level ${level.id}: ${level.title}`);
     const initialPages = generateInitialPages(level);
     setStoryPages(initialPages);
+    setTheoryGenerated(false);
     setTimeout(() => setBookOpened(true), 500);
+  }, [level]);
 
-    // Generate theory content when component mounts
+  // Generate theory content when reaching the theory page
+  useEffect(() => {
     const loadTheoryContent = async () => {
-      setIsLoadingTheory(true);
-      try {
-        const content = await generateTheoryContent(level);
-        setTheoryContent(content);
+      if (currentPage === 2 && !theoryGenerated) {
+        console.log('Loading theory content for page 3...');
         
-        // Update the theory page with generated content
-        setStoryPages(prevPages => 
-          prevPages.map(page => 
-            page.isTheoryPage 
-              ? { ...page, content, isLoading: false }
-              : page
-          )
-        );
-      } catch (error) {
-        console.error('Failed to generate theory content:', error);
-        // Keep fallback content on error
-        setStoryPages(prevPages => 
-          prevPages.map(page => 
-            page.isTheoryPage 
-              ? { ...page, content: "Loading theory content...", isLoading: false }
-              : page
-          )
-        );
-      } finally {
-        setIsLoadingTheory(false);
+        try {
+          const content = await generateTheoryContent(level);
+          console.log('Theory content generated successfully');
+          
+          setStoryPages(prevPages => 
+            prevPages.map(page => 
+              page.isTheoryPage 
+                ? { ...page, content, isLoading: false }
+                : page
+            )
+          );
+          setTheoryGenerated(true);
+        } catch (error) {
+          console.error('Failed to generate theory content:', error);
+          
+          setStoryPages(prevPages => 
+            prevPages.map(page => 
+              page.isTheoryPage 
+                ? { 
+                    ...page, 
+                    content: `Failed to generate custom content. Please check your internet connection and try again.\n\nFallback: This level covers ${level.concept}, a fundamental concept in quantum computing.`, 
+                    isLoading: false 
+                  }
+                : page
+            )
+          );
+          setTheoryGenerated(true);
+        }
       }
     };
 
     loadTheoryContent();
-  }, [level]);
+  }, [currentPage, level, theoryGenerated]);
 
   const totalPages = storyPages.length;
 
@@ -211,7 +222,6 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
               {/* Right Page - Enhanced Content */}
               <div className="w-1/2 p-6 relative overflow-hidden">
                 {currentPage < totalPages - 1 ? (
-                  // Regular Page Content with Enhanced Theory
                   <div 
                     className={`transform transition-all duration-500 ease-out ${
                       isFlipping ? 'scale-95 opacity-50 translate-x-4' : 'scale-100 opacity-100 translate-x-0'
@@ -226,7 +236,8 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                       <div className="flex items-center justify-center h-64">
                         <div className="text-center">
                           <Loader2 className="h-8 w-8 animate-spin text-amber-600 mx-auto mb-4" />
-                          <p className="text-amber-700">Generating personalized theory content...</p>
+                          <p className="text-amber-700">Generating personalized theory content for {level.concept}...</p>
+                          <p className="text-amber-600 text-xs mt-2">This may take a few moments</p>
                         </div>
                       </div>
                     ) : (
@@ -234,24 +245,23 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                         currentPageData?.isTheoryPage ? 'max-h-96' : 'max-h-80'
                       }`}>
                         {currentPageData?.content.split('\n\n').map((paragraph, idx) => (
-                          <p key={idx} className="text-justify animate-fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
+                          <p key={idx} className="text-justify">
                             {paragraph}
                           </p>
                         ))}
                       </div>
                     )}
                     
-                    {/* Enhanced Theory Page Indicator */}
-                    {currentPageData?.isTheoryPage && (
-                      <div className="absolute bottom-4 right-6 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-2">
-                        <span>AI Generated Theory</span>
-                        {isLoadingTheory && <Loader2 className="h-3 w-3 animate-spin" />}
+                    {/* Theory Page Indicator */}
+                    {currentPageData?.isTheoryPage && !currentPageData?.isLoading && (
+                      <div className="absolute bottom-4 right-6 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">
+                        AI Generated Theory
                       </div>
                     )}
                   </div>
                 ) : (
                   // Final Page
-                  <div className="flex flex-col items-center justify-center h-full animate-fade-in">
+                  <div className="flex flex-col items-center justify-center h-full">
                     <div className="text-center">
                       {renderIllustration("quantum_battle_ready")}
                       <h3 className="text-xl font-bold text-amber-900 mb-4 mt-4">Ready to Apply Your Knowledge?</h3>
