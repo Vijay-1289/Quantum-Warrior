@@ -1,11 +1,19 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Map, BookOpen } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { QuantumRoadmap } from '@/components/QuantumRoadmap';
 
 const Index = () => {
+  const [showRoadmap, setShowRoadmap] = useState(false);
+  const navigate = useNavigate();
+
+  const handleStartJourney = () => {
+    setShowRoadmap(false);
+    navigate('/story-board');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Hero Section */}
@@ -34,15 +42,14 @@ const Index = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <Link to="/story-board">
-              <Button 
-                size="lg"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-xl px-8 py-4"
-              >
-                <Map className="h-6 w-6 mr-3" />
-                Start Your Quantum Journey
-              </Button>
-            </Link>
+            <Button 
+              size="lg"
+              onClick={() => setShowRoadmap(true)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-xl px-8 py-4"
+            >
+              <Map className="h-6 w-6 mr-3" />
+              Start Your Quantum Journey
+            </Button>
           </CardContent>
         </Card>
 
@@ -75,6 +82,14 @@ const Index = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Roadmap Modal */}
+      {showRoadmap && (
+        <QuantumRoadmap
+          onStartJourney={handleStartJourney}
+          onClose={() => setShowRoadmap(false)}
+        />
+      )}
     </div>
   );
 };

@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Star, Trophy, BookOpen, Lock, CheckCircle, Circle, Plus, GridIcon, Heart } from 'lucide-react';
+import { Star, Trophy, BookOpen, Lock, CheckCircle, Circle, Plus, GridIcon, Heart, Home } from 'lucide-react';
 import { quantumLevels, chapters, type QuantumLevel, type Chapter } from '@/data/quantumLevels';
 import { LevelDetail } from '@/components/LevelDetail';
+import { Link } from 'react-router-dom';
 
 interface StoryBoardProps {
   playerProgress: {
@@ -63,14 +63,26 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
       <div className="container mx-auto max-w-7xl">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-4">
-            Quantum Learning Journey
-          </h1>
-          <p className="text-xl text-purple-200 max-w-3xl mx-auto">
-            Master quantum computing through 100 carefully crafted levels. Progress through chapters to unlock the secrets of the quantum realm!
-          </p>
+        {/* Header with Home Button */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="text-center flex-1">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-4">
+              Quantum Learning Journey
+            </h1>
+            <p className="text-xl text-purple-200 max-w-3xl mx-auto">
+              Master quantum computing through 100 carefully crafted levels. Progress through chapters to unlock the secrets of the quantum realm!
+            </p>
+          </div>
+          <Link to="/">
+            <Button
+              variant="outline"
+              size="lg"
+              className="bg-transparent border-purple-400 text-purple-300 hover:bg-purple-900/20 hover:text-white"
+            >
+              <Home className="h-5 w-5 mr-2" />
+              Home
+            </Button>
+          </Link>
         </div>
 
         {/* Progress Overview */}
