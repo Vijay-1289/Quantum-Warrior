@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,88 +34,227 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
 
-  // Generate enhanced challenge questions based on level concepts
+  // Generate concept-specific challenge questions based on level content
   const getChallengeQuestions = (levelId: number) => {
-    const questionBank: Record<number, Array<{
+    const conceptQuestions: Record<number, Array<{
       question: string;
       options: string[];
       correctAnswer: number;
       explanation: string;
     }>> = {
-      1: [
+      1: [ // Classical vs Quantum Computing
         {
-          question: "What is the fundamental difference between a classical bit and a qubit?",
+          question: "What is the main advantage of quantum computing over classical computing?",
           options: [
-            "A qubit can only be 0 or 1",
-            "A qubit can exist in superposition of 0 and 1 states",
-            "A qubit is faster than a bit",
-            "A qubit uses less energy"
+            "Quantum computers are smaller and cheaper",
+            "Quantum computers can process multiple possibilities simultaneously through superposition",
+            "Quantum computers use less electricity",
+            "Quantum computers are easier to program"
           ],
           correctAnswer: 1,
-          explanation: "Unlike classical bits that are either 0 or 1, qubits can exist in a quantum superposition of both states simultaneously, written as α|0⟩ + β|1⟩."
+          explanation: "Quantum computers leverage superposition to explore multiple computational paths simultaneously, potentially solving certain problems exponentially faster than classical computers."
         },
         {
-          question: "What happens when you measure a qubit in superposition?",
+          question: "In classical computing, what are the possible states of a bit?",
           options: [
-            "It stays in superposition",
-            "It becomes two separate qubits",
-            "It collapses to either |0⟩ or |1⟩ probabilistically",
-            "It disappears"
-          ],
-          correctAnswer: 2,
-          explanation: "Measurement causes the quantum superposition to collapse, and the qubit becomes either |0⟩ or |1⟩ with probabilities determined by the quantum amplitudes."
-        }
-      ],
-      2: [
-        {
-          question: "What does the Pauli-X gate do to a qubit?",
-          options: [
-            "Creates superposition",
-            "Flips |0⟩ to |1⟩ and |1⟩ to |0⟩",
-            "Measures the qubit",
-            "Entangles two qubits"
+            "0, 1, or both simultaneously",
+            "Only 0 or 1, but not both at the same time",
+            "Infinite possible values",
+            "Any decimal number between 0 and 1"
           ],
           correctAnswer: 1,
-          explanation: "The Pauli-X gate is the quantum NOT gate. It flips the computational basis states: X|0⟩ = |1⟩ and X|1⟩ = |0⟩."
+          explanation: "Classical bits are deterministic and can only be in one definite state at a time: either 0 or 1. This is fundamentally different from quantum bits (qubits)."
         },
         {
-          question: "What is the result of applying a Hadamard gate to |0⟩?",
+          question: "What makes quantum information processing fundamentally different from classical information processing?",
           options: [
-            "|1⟩",
-            "|0⟩",
-            "(|0⟩ + |1⟩)/√2",
-            "(|0⟩ - |1⟩)/√2"
+            "Quantum computers use different programming languages",
+            "Quantum systems can exist in multiple states simultaneously until measured",
+            "Quantum computers are faster at all tasks",
+            "Quantum computers don't need electricity"
           ],
-          correctAnswer: 2,
-          explanation: "The Hadamard gate creates equal superposition: H|0⟩ = (|0⟩ + |1⟩)/√2, giving equal probability of measuring 0 or 1."
+          correctAnswer: 1,
+          explanation: "The key difference is quantum superposition - quantum systems can exist in multiple states at once, allowing for parallel processing of information that classical systems cannot achieve."
         }
       ],
-      3: [
+      2: [ // Qubits & Superposition
+        {
+          question: "What does it mean for a qubit to be in superposition?",
+          options: [
+            "The qubit is broken and needs repair",
+            "The qubit exists in a combination of both |0⟩ and |1⟩ states simultaneously",
+            "The qubit is switching rapidly between 0 and 1",
+            "The qubit can store more than one bit of information"
+          ],
+          correctAnswer: 1,
+          explanation: "Superposition means the qubit exists in a quantum state that is a linear combination of the basis states |0⟩ and |1⟩, written as α|0⟩ + β|1⟩, where α and β are probability amplitudes."
+        },
+        {
+          question: "What happens when you measure a qubit that is in superposition?",
+          options: [
+            "You get both 0 and 1 as results",
+            "The measurement fails",
+            "The superposition collapses and you get either 0 or 1 with certain probabilities",
+            "The qubit becomes unusable"
+          ],
+          correctAnswer: 2,
+          explanation: "Measurement causes the quantum superposition to collapse. The qubit will be found in either the |0⟩ or |1⟩ state, with probabilities determined by the squared magnitudes of the amplitudes |α|² and |β|²."
+        },
+        {
+          question: "How is a qubit's superposition state mathematically represented?",
+          options: [
+            "As a simple 0 or 1",
+            "As α|0⟩ + β|1⟩ where α and β are complex probability amplitudes",
+            "As a percentage between 0% and 100%",
+            "As a binary string"
+          ],
+          correctAnswer: 1,
+          explanation: "A qubit in superposition is written as α|0⟩ + β|1⟩, where α and β are complex numbers called probability amplitudes. The probabilities of measuring 0 or 1 are |α|² and |β|² respectively, and |α|² + |β|² = 1."
+        }
+      ],
+      3: [ // Quantum Gates & Operations
+        {
+          question: "What does the Hadamard gate do to a qubit in the |0⟩ state?",
+          options: [
+            "It flips it to |1⟩",
+            "It creates an equal superposition: (|0⟩ + |1⟩)/√2",
+            "It measures the qubit",
+            "It does nothing"
+          ],
+          correctAnswer: 1,
+          explanation: "The Hadamard gate transforms |0⟩ into (|0⟩ + |1⟩)/√2, creating an equal superposition where the qubit has a 50% probability of being measured as 0 or 1."
+        },
+        {
+          question: "What is the purpose of the Pauli-X gate?",
+          options: [
+            "To create superposition",
+            "To flip the qubit state: |0⟩ becomes |1⟩ and |1⟩ becomes |0⟩",
+            "To measure the qubit",
+            "To entangle two qubits"
+          ],
+          correctAnswer: 1,
+          explanation: "The Pauli-X gate (also called the NOT gate) is the quantum equivalent of a classical NOT operation. It flips the computational basis states: X|0⟩ = |1⟩ and X|1⟩ = |0⟩."
+        },
+        {
+          question: "Why are quantum gates represented as unitary matrices?",
+          options: [
+            "Because they're easier to compute",
+            "Because quantum evolution must be reversible and preserve probability",
+            "Because classical gates use the same representation",
+            "Because they take up less memory"
+          ],
+          correctAnswer: 1,
+          explanation: "Quantum gates must be unitary (reversible) operations because quantum mechanics requires that the total probability is conserved and that quantum evolution is reversible. Unitary matrices preserve the normalization of quantum states."
+        }
+      ],
+      4: [ // Quantum Entanglement
         {
           question: "What is quantum entanglement?",
           options: [
-            "When qubits are physically close together",
-            "When qubits share quantum correlations regardless of distance",
-            "When qubits have the same energy",
-            "When qubits rotate at the same speed"
+            "When qubits are physically close to each other",
+            "A quantum correlation where measuring one particle instantly affects its partner, regardless of distance",
+            "When qubits have the same energy level",
+            "A type of quantum gate operation"
           ],
           correctAnswer: 1,
-          explanation: "Quantum entanglement creates correlations between particles where measuring one instantly determines the state of the other, no matter how far apart they are."
+          explanation: "Quantum entanglement creates a correlation between particles where the quantum state of each particle cannot be described independently. Measuring one particle instantly determines properties of its entangled partner, no matter how far apart they are."
         },
         {
-          question: "Which gate is commonly used to create entanglement?",
+          question: "What is a Bell state?",
           options: [
-            "Hadamard gate",
-            "Pauli-X gate",
-            "CNOT gate",
-            "Z gate"
+            "A single qubit in superposition",
+            "A maximally entangled state of two qubits",
+            "A type of quantum measurement",
+            "A classical bit operation"
           ],
-          correctAnswer: 2,
-          explanation: "The CNOT (Controlled-NOT) gate creates entanglement. When applied to |+0⟩, it produces the Bell state |Φ+⟩ = (|00⟩ + |11⟩)/√2."
+          correctAnswer: 1,
+          explanation: "Bell states are the four maximally entangled quantum states of two qubits. For example, |Φ+⟩ = (|00⟩ + |11⟩)/√2 means the qubits are perfectly correlated - if one is measured as 0, the other will definitely be 0, and vice versa."
+        },
+        {
+          question: "Why did Einstein call entanglement 'spooky action at a distance'?",
+          options: [
+            "Because it happens in dark places",
+            "Because it seemed to violate the principle that nothing can travel faster than light",
+            "Because it only works at night",
+            "Because it involves supernatural forces"
+          ],
+          correctAnswer: 1,
+          explanation: "Einstein was troubled by entanglement because measuring one particle seemed to instantly affect its partner regardless of distance, appearing to violate locality and special relativity. However, no information actually travels faster than light."
+        }
+      ],
+      5: [ // Quantum Algorithms
+        {
+          question: "What problem does Grover's algorithm solve more efficiently than classical algorithms?",
+          options: [
+            "Factoring large numbers",
+            "Searching through unsorted databases",
+            "Multiplying matrices",
+            "Sorting lists of numbers"
+          ],
+          correctAnswer: 1,
+          explanation: "Grover's algorithm provides a quadratic speedup for searching unsorted databases. While classical algorithms require O(N) time on average, Grover's algorithm needs only O(√N) time."
+        },
+        {
+          question: "What makes Shor's algorithm important for cryptography?",
+          options: [
+            "It can create unbreakable codes",
+            "It can factor large integers exponentially faster than known classical algorithms",
+            "It can generate random numbers",
+            "It can compress data efficiently"
+          ],
+          correctAnswer: 1,
+          explanation: "Shor's algorithm can factor large integers exponentially faster than the best known classical algorithms. This threatens RSA encryption, which relies on the difficulty of factoring large numbers for its security."
+        },
+        {
+          question: "How do quantum algorithms achieve their speedup over classical algorithms?",
+          options: [
+            "By using faster processors",
+            "By leveraging quantum superposition and interference to explore multiple solution paths simultaneously",
+            "By using more memory",
+            "By running on specialized hardware only"
+          ],
+          correctAnswer: 1,
+          explanation: "Quantum algorithms use superposition to explore many possible solutions simultaneously (quantum parallelism) and employ interference to amplify the probability of correct answers while canceling out wrong ones."
+        }
+      ],
+      6: [ // Quantum Image Processing
+        {
+          question: "What is the main challenge in quantum image processing?",
+          options: [
+            "Images are too large for quantum computers",
+            "Converting classical pixel data into quantum states while preserving spatial information",
+            "Quantum computers can't display colors",
+            "Images require too much memory"
+          ],
+          correctAnswer: 1,
+          explanation: "The primary challenge is efficiently encoding classical image data into quantum states. Various quantum image representations (like FRQI, NEQR) have been proposed to map pixel information into quantum amplitudes while maintaining spatial relationships."
+        },
+        {
+          question: "How could quantum entanglement potentially improve image recognition?",
+          options: [
+            "By making images brighter",
+            "By enabling detection of correlated features across different parts of an image simultaneously",
+            "By reducing file sizes",
+            "By changing image colors"
+          ],
+          correctAnswer: 1,
+          explanation: "Quantum entanglement could allow quantum image processing algorithms to detect and analyze correlations between different spatial regions of an image simultaneously, potentially offering advantages in pattern recognition and feature detection."
+        },
+        {
+          question: "What potential advantage could quantum image processing offer over classical methods?",
+          options: [
+            "Better image compression",
+            "Exponential speedup for certain image analysis tasks through quantum parallelism",
+            "Higher resolution displays",
+            "Automatic image colorization"
+          ],
+          correctAnswer: 1,
+          explanation: "Quantum image processing could theoretically provide exponential speedups for certain image analysis tasks by processing multiple image transformations in superposition and using quantum algorithms to analyze patterns that would be computationally intensive for classical systems."
         }
       ]
     };
-    return questionBank[levelId] || questionBank[1];
+    
+    return conceptQuestions[levelId] || conceptQuestions[1];
   };
 
   // Generate story pages with integrated questions
