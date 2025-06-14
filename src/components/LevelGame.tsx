@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Lightbulb, Zap, Target } from 'lucide-react';
+import { CheckCircle, XCircle, Lightbulb, Zap, Target, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { generateQuizQuestions } from '@/utils/theoryContent';
 
 interface Level {
   id: number;
@@ -16,6 +17,13 @@ interface Level {
   icon: React.ComponentType<any>;
   color: string;
   unlocked: boolean;
+}
+
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  correct: number;
+  explanation: string;
 }
 
 interface LevelGameProps {
@@ -29,143 +37,68 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const { toast } = useToast();
 
-  const getQuestionsForLevel = (levelId: number) => {
-    const questions = {
-      1: [ // Qubits & Superposition
-        {
-          question: "What is the fundamental unit of quantum information?",
-          options: ["Bit", "Qubit", "Byte", "Gate"],
-          correct: "Qubit",
-          explanation: "A qubit (quantum bit) is the basic unit of quantum information. Unlike classical bits that are either 0 or 1, qubits can exist in a superposition of both states simultaneously!"
-        },
-        {
-          question: "What allows a qubit to be in multiple states at once?",
-          options: ["Entanglement", "Superposition", "Decoherence", "Measurement"],
-          correct: "Superposition",
-          explanation: "Superposition is the quantum mechanical principle that allows particles to exist in multiple states simultaneously until measured. It's like Schrödinger's cat being both alive and dead!"
-        },
-        {
-          question: "When you measure a qubit in superposition, what happens?",
-          options: ["It stays in superposition", "It collapses to a definite state", "It disappears", "It duplicates"],
-          correct: "It collapses to a definite state",
-          explanation: "Measurement causes the quantum state to collapse from superposition into one of the possible definite states (0 or 1) with certain probabilities."
-        }
-      ],
-      2: [ // Basic Quantum Gates
-        {
-          question: "What does the X gate do to a qubit?",
-          options: ["Rotates it", "Flips it (NOT operation)", "Measures it", "Entangles it"],
-          correct: "Flips it (NOT operation)",
-          explanation: "The X gate is the quantum equivalent of the classical NOT gate. It flips |0⟩ to |1⟩ and |1⟩ to |0⟩."
-        },
-        {
-          question: "Which gate creates superposition from a definite state?",
-          options: ["X Gate", "Y Gate", "Z Gate", "Hadamard Gate"],
-          correct: "Hadamard Gate",
-          explanation: "The Hadamard gate (H) creates an equal superposition. It transforms |0⟩ into (|0⟩ + |1⟩)/√2 and |1⟩ into (|0⟩ - |1⟩)/√2."
-        },
-        {
-          question: "What happens when you apply two X gates in sequence?",
-          options: ["The qubit is destroyed", "Nothing - it returns to original state", "It creates superposition", "It measures the qubit"],
-          correct: "Nothing - it returns to original state",
-          explanation: "The X gate is its own inverse. Applying it twice returns the qubit to its original state: X(X|ψ⟩) = |ψ⟩."
-        }
-      ],
-      3: [ // Entanglement
-        {
-          question: "What is quantum entanglement?",
-          options: ["When qubits get tangled up", "A correlation between particles that persists over distance", "A type of quantum gate", "A measurement technique"],
-          correct: "A correlation between particles that persists over distance",
-          explanation: "Entanglement creates a mysterious connection between particles where measuring one instantly affects the other, regardless of the distance between them!"
-        },
-        {
-          question: "What did Einstein call entanglement?",
-          options: ["Quantum magic", "Spooky action at a distance", "Impossible physics", "Quantum telepathy"],
-          correct: "Spooky action at a distance",
-          explanation: "Einstein was uncomfortable with entanglement and called it 'spooky action at a distance' because it seemed to violate locality - the idea that objects are only affected by their immediate surroundings."
-        },
-        {
-          question: "What is a Bell state?",
-          options: ["A type of quantum gate", "A maximally entangled state of two qubits", "A measurement device", "A quantum algorithm"],
-          correct: "A maximally entangled state of two qubits",
-          explanation: "Bell states are the four maximally entangled quantum states of two qubits. They form the foundation for many quantum protocols and demonstrate the strongest form of quantum correlation."
-        }
-      ],
-      4: [ // Image Processing Basics
-        {
-          question: "What is a pixel?",
-          options: ["A type of camera", "The smallest unit of a digital image", "A color filter", "An image format"],
-          correct: "The smallest unit of a digital image",
-          explanation: "A pixel (picture element) is the smallest controllable element of a picture. Digital images are composed of thousands or millions of pixels arranged in a grid."
-        },
-        {
-          question: "What does RGB stand for in digital images?",
-          options: ["Red, Green, Blue", "Red, Gray, Black", "Real, Generated, Bitmap", "Resolution, Gamma, Brightness"],
-          correct: "Red, Green, Blue",
-          explanation: "RGB represents the three primary colors of light. Each pixel in an RGB image has values for red, green, and blue components, typically ranging from 0 to 255."
-        },
-        {
-          question: "What is image filtering used for?",
-          options: ["Deleting images", "Enhancing or modifying image features", "Compressing files", "Changing file formats"],
-          correct: "Enhancing or modifying image features",
-          explanation: "Image filtering applies mathematical operations to modify images - like blurring, sharpening, edge detection, or noise reduction. Filters are the tools that transform raw images into enhanced visuals!"
-        }
-      ],
-      5: [ // Quantum Algorithms
-        {
-          question: "What is Grover's algorithm used for?",
-          options: ["Factoring large numbers", "Searching unsorted databases", "Creating entanglement", "Measuring qubits"],
-          correct: "Searching unsorted databases",
-          explanation: "Grover's algorithm provides a quadratic speedup for searching unsorted databases. While classical algorithms need O(N) time, Grover's algorithm needs only O(√N) time!"
-        },
-        {
-          question: "What is Shor's algorithm famous for?",
-          options: ["Image processing", "Database searching", "Factoring large integers", "Creating random numbers"],
-          correct: "Factoring large integers",
-          explanation: "Shor's algorithm can factor large integers exponentially faster than classical algorithms. This threatens current cryptographic systems but also opens doors to new quantum cryptography!"
-        },
-        {
-          question: "What gives quantum algorithms their power?",
-          options: ["Faster processors", "Quantum parallelism and interference", "Better programming", "More memory"],
-          correct: "Quantum parallelism and interference",
-          explanation: "Quantum algorithms leverage superposition to explore many possibilities simultaneously (quantum parallelism) and use interference to amplify correct answers while canceling wrong ones."
-        }
-      ],
-      6: [ // Quantum Image Processing
-        {
-          question: "How can quantum computing help with image processing?",
-          options: ["By storing more images", "By processing multiple image states simultaneously", "By making images smaller", "By changing image colors"],
-          correct: "By processing multiple image states simultaneously",
-          explanation: "Quantum image processing can theoretically process multiple image transformations in superposition, potentially offering exponential speedups for certain image analysis tasks!"
-        },
-        {
-          question: "What is the main challenge in quantum image processing?",
-          options: ["Lack of quantum computers", "Converting classical images to quantum states", "Images are too colorful", "Quantum computers can't display images"],
-          correct: "Converting classical images to quantum states",
-          explanation: "A major challenge is efficiently encoding classical image data into quantum states while preserving the information needed for processing. Various quantum image representations are being researched!"
-        },
-        {
-          question: "What quantum property could revolutionize pattern recognition?",
-          options: ["Decoherence", "Quantum entanglement for correlated feature detection", "Measurement", "Classical interference"],
-          correct: "Quantum entanglement for correlated feature detection",
-          explanation: "Quantum entanglement could enable the detection of correlated patterns across different parts of images simultaneously, potentially revolutionizing computer vision and AI!"
-        }
-      ]
+  // Load AI-generated questions when component mounts
+  useEffect(() => {
+    const loadQuestions = async () => {
+      console.log(`Loading AI-generated questions for Level ${level.id}: ${level.concept}`);
+      setIsLoadingQuestions(true);
+      
+      try {
+        const generatedQuestions = await generateQuizQuestions(level);
+        console.log('Quiz questions generated successfully for level', level.id);
+        setQuestions(generatedQuestions);
+      } catch (error) {
+        console.error('Failed to generate quiz questions for level', level.id, ':', error);
+        // Fallback to basic questions if API fails
+        setQuestions(getFallbackQuestions(level));
+      } finally {
+        setIsLoadingQuestions(false);
+      }
     };
 
-    return questions[levelId as keyof typeof questions] || questions[1];
-  };
+    loadQuestions();
+  }, [level]);
 
-  const questions = getQuestionsForLevel(level.id);
+  const getFallbackQuestions = (level: Level): QuizQuestion[] => {
+    return [
+      {
+        question: `What is the main concept covered in Level ${level.id}: ${level.title}?`,
+        options: [
+          level.concept,
+          "Classical computing only",
+          "Traditional programming",
+          "Basic mathematics"
+        ],
+        correct: 0,
+        explanation: `Level ${level.id} focuses specifically on ${level.concept}, which is fundamental to understanding quantum computing principles.`
+      },
+      {
+        question: `Why is ${level.concept} important in quantum computing?`,
+        options: [
+          "It makes computers faster",
+          "It's a fundamental quantum principle",
+          "It saves memory",
+          "It reduces costs"
+        ],
+        correct: 1,
+        explanation: `${level.concept} is one of the core principles that makes quantum computing unique and powerful.`
+      }
+    ];
+  };
 
   const handleAnswerSelect = (answer: string) => {
     setSelectedAnswer(answer);
   };
 
   const handleSubmitAnswer = () => {
-    const isCorrect = selectedAnswer === questions[currentQuestion].correct;
+    if (!questions[currentQuestion]) return;
+    
+    const correctAnswer = questions[currentQuestion].options[questions[currentQuestion].correct];
+    const isCorrect = selectedAnswer === correctAnswer;
     
     if (isCorrect) {
       setScore(score + 100);
@@ -199,7 +132,25 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
     onComplete(finalScore);
   };
 
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  // Show loading state while questions are being generated
+  if (isLoadingQuestions) {
+    return (
+      <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">Generating Quiz Questions</h3>
+              <p className="text-gray-300">Creating personalized questions for {level.concept}...</p>
+              <p className="text-gray-400 text-sm mt-2">This may take a few moments</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
   if (gameComplete) {
     return (
@@ -229,6 +180,18 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
     );
   }
 
+  const currentQuestionData = questions[currentQuestion];
+
+  if (!currentQuestionData) {
+    return (
+      <Card className="bg-black/20 backdrop-blur-lg border-red-500/20">
+        <CardContent className="p-8 text-center">
+          <p className="text-red-400">Failed to load questions. Please try again.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Progress Bar */}
@@ -248,14 +211,17 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
             <Badge className="bg-purple-600/20 text-purple-300">
               {level.concept}
             </Badge>
+            <Badge className="bg-blue-600/20 text-blue-300 text-xs">
+              AI Generated
+            </Badge>
           </div>
           <CardTitle className="text-xl text-white">
-            {questions[currentQuestion].question}
+            {currentQuestionData.question}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-3 mb-6">
-            {questions[currentQuestion].options.map((option, index) => (
+            {currentQuestionData.options.map((option, index) => (
               <Button
                 key={index}
                 variant={selectedAnswer === option ? "default" : "outline"}
@@ -278,23 +244,23 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
           {/* Explanation */}
           {showExplanation && (
             <Card className={`mb-4 ${
-              selectedAnswer === questions[currentQuestion].correct
+              selectedAnswer === currentQuestionData.options[currentQuestionData.correct]
                 ? 'bg-green-900/20 border-green-500/30'
                 : 'bg-red-900/20 border-red-500/30'
             }`}>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  {selectedAnswer === questions[currentQuestion].correct ? (
+                  {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? (
                     <CheckCircle className="h-5 w-5 text-green-400 mt-0.5" />
                   ) : (
                     <XCircle className="h-5 w-5 text-red-400 mt-0.5" />
                   )}
                   <div>
                     <p className="font-semibold text-white mb-2">
-                      {selectedAnswer === questions[currentQuestion].correct ? 'Correct!' : 'Incorrect'}
+                      {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? 'Correct!' : 'Incorrect'}
                     </p>
                     <p className="text-gray-300 text-sm">
-                      {questions[currentQuestion].explanation}
+                      {currentQuestionData.explanation}
                     </p>
                   </div>
                 </div>

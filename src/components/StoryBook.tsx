@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Play, BookOpen, Loader2 } from 'lucide-react';
 import { type QuantumLevel } from '@/data/quantumLevels';
 import { getIllustrationComponent } from '@/components/SVGIllustrations';
-import { generateTheoryContent } from '@/utils/theoryContent';
+import { generateTheoryContent, generateQuizQuestions } from '@/utils/theoryContent';
 
 interface StoryPage {
   id: number;
@@ -26,7 +27,8 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [isFlipping, setIsFlipping] = useState(false);
   const [bookOpened, setBookOpened] = useState(false);
   const [storyPages, setStoryPages] = useState<StoryPage[]>([]);
-  const [theoryGenerated, setTheoryGenerated] = useState(false);
+  const [theoryContent, setTheoryContent] = useState<string>('');
+  const [isGeneratingContent, setIsGeneratingContent] = useState(true);
 
   // Generate initial story pages
   const generateInitialPages = (level: QuantumLevel): StoryPage[] => {
@@ -66,53 +68,50 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
     ];
   };
 
+  // Initialize story pages and generate content immediately
   useEffect(() => {
     console.log(`StoryBook mounted for Level ${level.id}: ${level.title}`);
     const initialPages = generateInitialPages(level);
     setStoryPages(initialPages);
-    setTheoryGenerated(false);
-    setTimeout(() => setBookOpened(true), 500);
-  }, [level]);
-
-  // Generate theory content when reaching the theory page
-  useEffect(() => {
+    setIsGeneratingContent(true);
+    
+    // Generate theory content immediately when component mounts
     const loadTheoryContent = async () => {
-      if (currentPage === 2 && !theoryGenerated) {
-        console.log('Loading theory content for page 3...');
+      console.log(`Generating theory content for Level ${level.id}: ${level.concept}`);
+      
+      try {
+        const content = await generateTheoryContent(level);
+        console.log('Theory content generated successfully for level', level.id);
         
-        try {
-          const content = await generateTheoryContent(level);
-          console.log('Theory content generated successfully');
-          
-          setStoryPages(prevPages => 
-            prevPages.map(page => 
-              page.isTheoryPage 
-                ? { ...page, content, isLoading: false }
-                : page
-            )
-          );
-          setTheoryGenerated(true);
-        } catch (error) {
-          console.error('Failed to generate theory content:', error);
-          
-          setStoryPages(prevPages => 
-            prevPages.map(page => 
-              page.isTheoryPage 
-                ? { 
-                    ...page, 
-                    content: `Failed to generate custom content. Please check your internet connection and try again.\n\nFallback: This level covers ${level.concept}, a fundamental concept in quantum computing.`, 
-                    isLoading: false 
-                  }
-                : page
-            )
-          );
-          setTheoryGenerated(true);
-        }
+        setTheoryContent(content);
+        setStoryPages(prevPages => 
+          prevPages.map(page => 
+            page.isTheoryPage 
+              ? { ...page, content, isLoading: false }
+              : page
+          )
+        );
+        setIsGeneratingContent(false);
+      } catch (error) {
+        console.error('Failed to generate theory content for level', level.id, ':', error);
+        
+        const fallbackContent = `Failed to generate custom content for ${level.concept}. Please check your internet connection and try again.\n\nThis level covers ${level.concept}, a fundamental concept in quantum computing that builds upon previous knowledge and prepares you for advanced quantum applications.`;
+        
+        setTheoryContent(fallbackContent);
+        setStoryPages(prevPages => 
+          prevPages.map(page => 
+            page.isTheoryPage 
+              ? { ...page, content: fallbackContent, isLoading: false }
+              : page
+          )
+        );
+        setIsGeneratingContent(false);
       }
     };
 
     loadTheoryContent();
-  }, [currentPage, level, theoryGenerated]);
+    setTimeout(() => setBookOpened(true), 500);
+  }, [level]);
 
   const totalPages = storyPages.length;
 
@@ -232,7 +231,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                     </h3>
                     
                     {/* Loading state for theory page */}
-                    {currentPageData?.isLoading ? (
+                    {currentPageData?.isLoading || (currentPageData?.isTheoryPage && isGeneratingContent) ? (
                       <div className="flex items-center justify-center h-64">
                         <div className="text-center">
                           <Loader2 className="h-8 w-8 animate-spin text-amber-600 mx-auto mb-4" />
@@ -253,7 +252,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                     )}
                     
                     {/* Theory Page Indicator */}
-                    {currentPageData?.isTheoryPage && !currentPageData?.isLoading && (
+                    {currentPageData?.isTheoryPage && !currentPageData?.isLoading && !isGeneratingContent && (
                       <div className="absolute bottom-4 right-6 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">
                         AI Generated Theory
                       </div>
