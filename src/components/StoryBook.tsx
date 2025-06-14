@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Play, BookOpen, Loader2 } from 'lucide-react';
 import { type QuantumLevel } from '@/data/quantumLevels';
 import { getIllustrationComponent } from '@/components/SVGIllustrations';
-import { generateTheoryContent, generateQuizQuestions } from '@/utils/theoryContent';
+import { generateTheoryContent } from '@/utils/theoryContent';
 
 interface StoryPage {
   id: number;
@@ -27,31 +26,30 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [isFlipping, setIsFlipping] = useState(false);
   const [bookOpened, setBookOpened] = useState(false);
   const [storyPages, setStoryPages] = useState<StoryPage[]>([]);
-  const [theoryContent, setTheoryContent] = useState<string>('');
   const [isGeneratingContent, setIsGeneratingContent] = useState(true);
 
-  // Generate initial story pages
+  // Generate initial story pages with unique content for each level
   const generateInitialPages = (level: QuantumLevel): StoryPage[] => {
-    console.log(`Creating story pages for Level ${level.id}: ${level.title}`);
+    console.log(`Creating story pages for Level ${level.id}: ${level.title} - Concept: ${level.concept}`);
     
     return [
       {
         id: 1,
         title: "The Quantum Adventure Begins",
-        content: `Welcome, brave Quantum Warrior, to Level ${level.id}: ${level.title}!\n\nIn this chapter of your epic journey through the quantum realm, you will master the profound mysteries of ${level.concept}. The ancient quantum masters have left knowledge that will be essential for defeating the Quantum Villain.\n\nPrepare yourself, for the concepts ahead will challenge your understanding of reality itself!`,
+        content: `Welcome, brave Quantum Warrior, to Level ${level.id}: ${level.title}!\n\nIn this chapter of your epic journey through the quantum realm, you will master the profound mysteries of ${level.concept}. The ancient quantum masters have left knowledge that will be essential for defeating the Quantum Villain.\n\nThis level focuses specifically on "${level.concept}" - a ${level.difficulty} level concept that will challenge your understanding of quantum reality!\n\nPrepare yourself, for the concepts ahead will unlock new dimensions of quantum knowledge!`,
         illustration: "quantum_warrior_intro",
         concept: "Introduction"
       },
       {
         id: 2,
-        title: "The Quantum Tale Unfolds",
-        content: `${level.storyText}\n\nNow, let us delve deeper into the quantum principles that govern this realm. The knowledge you're about to gain will be crucial for your upcoming challenge.`,
+        title: `The Tale of ${level.concept}`,
+        content: `${level.storyText}\n\nAs you can see, ${level.concept} plays a crucial role in this quantum realm. The story you just experienced directly relates to the theoretical foundations you're about to learn.\n\nNext, you'll dive deep into the scientific principles behind ${level.concept}, gaining the knowledge needed to master this level's challenges.`,
         illustration: getAdvancedIllustrationKey(level.concept),
         concept: level.concept
       },
       {
         id: 3,
-        title: `Mastering ${level.concept}`,
+        title: `Deep Dive: ${level.concept}`,
         content: '',
         illustration: getAdvancedIllustrationKey(level.concept),
         concept: "Detailed Theory",
@@ -60,44 +58,62 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
       },
       {
         id: 4,
-        title: "Ready for the Quantum Battle",
-        content: `Excellent! You have absorbed the deep knowledge of ${level.concept}. You are now ready to face the Quantum Villain in the ${level.gameType} challenge.\n\nRemember: Every aspect of your upcoming battle relates directly to the concepts you've just learned. Trust in your quantum wisdom and apply the theoretical foundations you've mastered!`,
+        title: "Ready for the Quantum Challenge",
+        content: `Outstanding! You have now mastered the theoretical foundations of ${level.concept}. Your mind has been expanded with quantum knowledge that few possess.\n\nYou are now ready to face the Quantum Villain in the ${level.gameType} challenge. Remember: Every aspect of your upcoming battle directly relates to ${level.concept} - the very concept you've just studied.\n\nTrust in your quantum wisdom and apply the principles of ${level.concept} to emerge victorious!`,
         illustration: "quantum_battle_ready",
         concept: "Final Preparation"
       }
     ];
   };
 
-  // Initialize story pages and generate content immediately
+  // Initialize story pages and generate AI content immediately when component mounts
   useEffect(() => {
-    console.log(`StoryBook mounted for Level ${level.id}: ${level.title}`);
+    console.log(`StoryBook mounted for Level ${level.id}: ${level.title} - Concept: ${level.concept}`);
+    
     const initialPages = generateInitialPages(level);
     setStoryPages(initialPages);
     setIsGeneratingContent(true);
     
-    // Generate theory content immediately when component mounts
+    // Generate theory content immediately for this specific level
     const loadTheoryContent = async () => {
-      console.log(`Generating theory content for Level ${level.id}: ${level.concept}`);
+      console.log(`Starting AI content generation for Level ${level.id} - Concept: ${level.concept}`);
       
       try {
         const content = await generateTheoryContent(level);
-        console.log('Theory content generated successfully for level', level.id);
+        console.log(`AI theory content successfully generated for Level ${level.id} - ${level.concept}:`, content.substring(0, 100) + '...');
         
-        setTheoryContent(content);
         setStoryPages(prevPages => 
           prevPages.map(page => 
             page.isTheoryPage 
-              ? { ...page, content, isLoading: false }
+              ? { 
+                  ...page, 
+                  content, 
+                  isLoading: false,
+                  title: `Deep Dive: ${level.concept}` 
+                }
               : page
           )
         );
         setIsGeneratingContent(false);
       } catch (error) {
-        console.error('Failed to generate theory content for level', level.id, ':', error);
+        console.error(`Failed to generate AI content for Level ${level.id} - ${level.concept}:`, error);
         
-        const fallbackContent = `Failed to generate custom content for ${level.concept}. Please check your internet connection and try again.\n\nThis level covers ${level.concept}, a fundamental concept in quantum computing that builds upon previous knowledge and prepares you for advanced quantum applications.`;
+        const fallbackContent = `# Failed to Generate Custom Content
+
+Unfortunately, we couldn't generate personalized content for "${level.concept}" at this time. This might be due to connectivity issues or API limitations.
+
+## About ${level.concept}
+This level covers ${level.concept}, which is a fundamental concept in quantum computing. 
+
+## Level Context
+${level.description}
+
+## What You'll Learn
+The concepts in this level build upon previous knowledge and prepare you for advanced quantum applications.
+
+---
+*Please check your internet connection and try again for the best learning experience with AI-generated content.*`;
         
-        setTheoryContent(fallbackContent);
         setStoryPages(prevPages => 
           prevPages.map(page => 
             page.isTheoryPage 
@@ -111,12 +127,12 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
 
     loadTheoryContent();
     setTimeout(() => setBookOpened(true), 500);
-  }, [level]);
+  }, [level.id, level.concept, level.title]); // Add dependencies to ensure re-generation for different levels
 
   const totalPages = storyPages.length;
 
   const handleNextPage = () => {
-    if (currentPage < totalPages - 1 && !isFlipping) {
+    if (currentPage < storyPages.length - 1 && !isFlipping) {
       setIsFlipping(true);
       setTimeout(() => {
         setCurrentPage(currentPage + 1);
@@ -152,7 +168,10 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   if (!currentPageData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-white" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-white mx-auto mb-4" />
+          <p className="text-white">Loading Level {level.id} story...</p>
+        </div>
       </div>
     );
   }
@@ -187,6 +206,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                 <BookOpen className="h-16 w-16 mx-auto mb-4" />
                 <h2 className="text-2xl font-bold mb-2">Level {level.id}</h2>
                 <p className="text-lg">{level.title}</p>
+                <p className="text-sm text-amber-200 mt-2">{level.concept}</p>
               </div>
             </div>
           </div>
@@ -220,7 +240,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
 
               {/* Right Page - Enhanced Content */}
               <div className="w-1/2 p-6 relative overflow-hidden">
-                {currentPage < totalPages - 1 ? (
+                {currentPage < storyPages.length - 1 ? (
                   <div 
                     className={`transform transition-all duration-500 ease-out ${
                       isFlipping ? 'scale-95 opacity-50 translate-x-4' : 'scale-100 opacity-100 translate-x-0'
@@ -235,8 +255,9 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                       <div className="flex items-center justify-center h-64">
                         <div className="text-center">
                           <Loader2 className="h-8 w-8 animate-spin text-amber-600 mx-auto mb-4" />
-                          <p className="text-amber-700">Generating personalized theory content for {level.concept}...</p>
-                          <p className="text-amber-600 text-xs mt-2">This may take a few moments</p>
+                          <p className="text-amber-700 font-semibold">Generating AI content for</p>
+                          <p className="text-amber-800 text-lg font-bold">{level.concept}</p>
+                          <p className="text-amber-600 text-xs mt-2">Level {level.id} • This may take a moment</p>
                         </div>
                       </div>
                     ) : (
@@ -254,7 +275,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                     {/* Theory Page Indicator */}
                     {currentPageData?.isTheoryPage && !currentPageData?.isLoading && !isGeneratingContent && (
                       <div className="absolute bottom-4 right-6 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">
-                        AI Generated Theory
+                        AI Generated • {level.concept}
                       </div>
                     )}
                   </div>
@@ -264,14 +285,14 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                     <div className="text-center">
                       {renderIllustration("quantum_battle_ready")}
                       <h3 className="text-xl font-bold text-amber-900 mb-4 mt-4">Ready to Apply Your Knowledge?</h3>
-                      <p className="text-sm text-amber-700 mb-6">You've mastered the theory. Now put it into practice!</p>
+                      <p className="text-sm text-amber-700 mb-6">You've mastered {level.concept}. Now put it into practice!</p>
                       <Button
                         onClick={handleStartChallenge}
                         size="lg"
                         className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transform transition-all duration-200 hover:scale-105 hover:shadow-lg"
                       >
                         <Play className="h-5 w-5 mr-2" />
-                        Start Quantum Challenge
+                        Start {level.concept} Challenge
                       </Button>
                     </div>
                   </div>
@@ -292,12 +313,12 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
               </Button>
               
               <span className="text-amber-700 font-medium">
-                {currentPage + 1} / {totalPages}
+                {currentPage + 1} / {storyPages.length}
               </span>
               
               <Button
                 onClick={handleNextPage}
-                disabled={currentPage >= totalPages - 1 || isFlipping}
+                disabled={currentPage >= storyPages.length - 1 || isFlipping}
                 variant="outline"
                 size="sm"
                 className="border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -307,7 +328,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
             </div>
 
             <div className="absolute bottom-2 left-6 text-xs text-amber-600">
-              Page {currentPage + 1}
+              Level {level.id} • Page {currentPage + 1} • {level.concept}
             </div>
           </Card>
         </div>
