@@ -34,8 +34,71 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [generatedTheoryContent, setGeneratedTheoryContent] = useState<string>('');
   const [retryCount, setRetryCount] = useState(0);
 
-  // Function to render text with bold formatting
+  // Function to render text with enhanced formatting
   const renderFormattedText = (text: string) => {
+    const sections = text.split(/(\n\n)/g);
+    
+    return sections.map((section, sectionIndex) => {
+      if (section === '\n\n') return null;
+      
+      // Check if this is a heading (starts with ##)
+      if (section.trim().startsWith('##')) {
+        const headingText = section.replace(/##\s*/, '').trim();
+        return (
+          <h4 key={sectionIndex} className="text-lg font-bold text-amber-800 mb-3 mt-4 border-l-4 border-amber-400 pl-3">
+            {headingText}
+          </h4>
+        );
+      }
+      
+      // Check if this is a subheading (starts with ###)
+      if (section.trim().startsWith('###')) {
+        const subheadingText = section.replace(/###\s*/, '').trim();
+        return (
+          <h5 key={sectionIndex} className="text-base font-semibold text-amber-700 mb-2 mt-3">
+            {subheadingText}
+          </h5>
+        );
+      }
+      
+      // Check if this is a bullet point section
+      if (section.includes('•') || section.includes('-')) {
+        const lines = section.split('\n').filter(line => line.trim());
+        const bulletPoints = lines.filter(line => line.trim().startsWith('•') || line.trim().startsWith('-'));
+        const regularText = lines.filter(line => !line.trim().startsWith('•') && !line.trim().startsWith('-'));
+        
+        return (
+          <div key={sectionIndex} className="mb-4">
+            {regularText.map((text, idx) => (
+              <p key={idx} className="text-justify mb-2">
+                {renderBasicFormatting(text)}
+              </p>
+            ))}
+            {bulletPoints.length > 0 && (
+              <ul className="list-none space-y-2 ml-4">
+                {bulletPoints.map((point, idx) => (
+                  <li key={idx} className="flex items-start">
+                    <span className="text-amber-600 mr-2 mt-1">•</span>
+                    <span className="text-justify">{renderBasicFormatting(point.replace(/^[•-]\s*/, ''))}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      }
+      
+      // Regular paragraph
+      return (
+        <p key={sectionIndex} className="text-justify mb-3 leading-relaxed">
+          {renderBasicFormatting(section)}
+        </p>
+      );
+    });
+  };
+
+  // Helper function for basic formatting (bold, etc.)
+  const renderBasicFormatting = (text: string) => {
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, index) => {
       if (part.startsWith('**') && part.endsWith('**')) {
@@ -381,14 +444,10 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                         </div>
                       </div>
                     ) : (
-                      <div className={`text-amber-800 leading-relaxed text-sm space-y-3 overflow-y-auto ${
+                      <div className={`text-amber-800 leading-relaxed text-sm overflow-y-auto ${
                         currentPageData?.isTheoryPage ? 'max-h-96' : 'max-h-80'
                       }`}>
-                        {currentPageData?.content.split('\n\n').map((paragraph, idx) => (
-                          <p key={idx} className="text-justify">
-                            {renderFormattedText(paragraph)}
-                          </p>
-                        ))}
+                        {renderFormattedText(currentPageData?.content || '')}
                       </div>
                     )}
                     

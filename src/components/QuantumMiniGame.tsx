@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +21,12 @@ interface QuizQuestion {
   explanation: string;
 }
 
+interface TimeChangeAnimation {
+  id: number;
+  change: number;
+  show: boolean;
+}
+
 export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onComplete, onBack }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
@@ -33,6 +38,8 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [retryAttempts, setRetryAttempts] = useState(0);
+  const [timeChangeAnimations, setTimeChangeAnimations] = useState<TimeChangeAnimation[]>([]);
+  const [animationCounter, setAnimationCounter] = useState(0);
   const { toast } = useToast();
 
   // Function to render text with bold formatting
@@ -45,6 +52,34 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
       }
       return part;
     });
+  };
+
+  // Function to show time change animation
+  const showTimeChangeAnimation = (change: number) => {
+    const newAnimation: TimeChangeAnimation = {
+      id: animationCounter,
+      change,
+      show: true
+    };
+    
+    setTimeChangeAnimations(prev => [...prev, newAnimation]);
+    setAnimationCounter(prev => prev + 1);
+    
+    // Remove animation after 2 seconds
+    setTimeout(() => {
+      setTimeChangeAnimations(prev => 
+        prev.map(anim => 
+          anim.id === newAnimation.id ? { ...anim, show: false } : anim
+        )
+      );
+      
+      // Clean up after fade out
+      setTimeout(() => {
+        setTimeChangeAnimations(prev => 
+          prev.filter(anim => anim.id !== newAnimation.id)
+        );
+      }, 500);
+    }, 1500);
   };
 
   // Load AI-generated questions when component mounts
@@ -131,6 +166,7 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
       setScore(score + 100);
       // Add 2 seconds for correct answer
       setTimeLeft(prev => prev + 2);
+      showTimeChangeAnimation(2);
       toast({
         title: "Excellent! 🎉",
         description: "You're mastering quantum concepts! +2 seconds bonus!",
@@ -138,6 +174,7 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
     } else {
       // Subtract 2 seconds for wrong answer, but don't go below 0
       setTimeLeft(prev => Math.max(0, prev - 2));
+      showTimeChangeAnimation(-2);
       toast({
         title: "Not quite right",
         description: "Review the explanation and try again! -2 seconds penalty",
@@ -316,13 +353,38 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
           </CardContent>
         </Card>
         
-        <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
+        <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20 relative">
           <CardContent className="p-4">
             <div className="text-center">
               <div className={`text-2xl font-bold ${timeLeft <= 10 ? 'text-red-400' : 'text-orange-400'}`}>
                 {timeLeft}s
               </div>
               <p className="text-sm text-gray-400">Time Remaining</p>
+            </div>
+            
+            {/* Time Change Animations */}
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              {timeChangeAnimations.map((animation) => (
+                <div
+                  key={animation.id}
+                  className={`absolute text-2xl font-bold transition-all duration-500 ${
+                    animation.show 
+                      ? 'opacity-100 translate-y-0' 
+                      : 'opacity-0 -translate-y-8'
+                  } ${
+                    animation.change > 0 
+                      ? 'text-green-400' 
+                      : 'text-red-400'
+                  }`}
+                  style={{
+                    animation: animation.show 
+                      ? 'fadeInUp 0.5s ease-out forwards' 
+                      : 'fadeOutUp 0.5s ease-out forwards'
+                  }}
+                >
+                  {animation.change > 0 ? '+' : ''}{animation.change}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -416,6 +478,31 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
           </div>
         </CardContent>
       </Card>
+
+      {/* Custom CSS for animations */}
+      <style jsx>{`
+        @keyframes fadeInUp {
+          0% {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(-10px);
+          }
+        }
+        
+        @keyframes fadeOutUp {
+          0% {
+            opacity: 1;
+            transform: translateY(-10px);
+          }
+          100% {
+            opacity: 0;
+            transform: translateY(-30px);
+          }
+        }
+      `}</style>
     </div>
   );
 };
