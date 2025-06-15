@@ -59,13 +59,14 @@ const Index = () => {
     if (isNewUser) {
       setShowHauntingIntro(true);
     } else {
-      setShowRoadmap(true);
+      // For existing users, go directly to story board
+      navigate('/story-board');
     }
   };
 
   const handleHauntingComplete = () => {
     setShowHauntingIntro(false);
-    // Navigate directly to story board for new users after haunting intro
+    // For new users after haunting intro, go directly to story board
     navigate('/story-board');
   };
 
