@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Lightbulb, Zap, Target, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Lightbulb, Zap, Target, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuizQuestions } from '@/utils/theoryContent';
 
@@ -39,6 +39,7 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
   const [gameComplete, setGameComplete] = useState(false);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const { toast } = useToast();
 
   // Load AI-generated questions when component mounts
@@ -46,6 +47,7 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
     const loadQuestions = async () => {
       console.log(`Loading AI-generated questions for Level ${level.id}: ${level.concept}`);
       setIsLoadingQuestions(true);
+      setHasError(false);
       
       try {
         const generatedQuestions = await generateQuizQuestions(level);
@@ -53,8 +55,8 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
         setQuestions(generatedQuestions);
       } catch (error) {
         console.error('Failed to generate quiz questions for level', level.id, ':', error);
-        // Fallback to basic questions if API fails
-        setQuestions(getFallbackQuestions(level));
+        setHasError(true);
+        setQuestions([]);
       } finally {
         setIsLoadingQuestions(false);
       }
@@ -62,33 +64,6 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
 
     loadQuestions();
   }, [level]);
-
-  const getFallbackQuestions = (level: Level): QuizQuestion[] => {
-    return [
-      {
-        question: `What is the main concept covered in Level ${level.id}: ${level.title}?`,
-        options: [
-          level.concept,
-          "Classical computing only",
-          "Traditional programming",
-          "Basic mathematics"
-        ],
-        correct: 0,
-        explanation: `Level ${level.id} focuses specifically on ${level.concept}, which is fundamental to understanding quantum computing principles.`
-      },
-      {
-        question: `Why is ${level.concept} important in quantum computing?`,
-        options: [
-          "It makes computers faster",
-          "It's a fundamental quantum principle",
-          "It saves memory",
-          "It reduces costs"
-        ],
-        correct: 1,
-        explanation: `${level.concept} is one of the core principles that makes quantum computing unique and powerful.`
-      }
-    ];
-  };
 
   const handleAnswerSelect = (answer: string) => {
     setSelectedAnswer(answer);
@@ -143,6 +118,30 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
               <h3 className="text-xl font-bold text-white mb-2">Generating Quiz Questions</h3>
               <p className="text-gray-300">Creating personalized questions for {level.concept}...</p>
               <p className="text-gray-400 text-sm mt-2">This may take a few moments</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show error state if questions failed to load
+  if (hasError || questions.length === 0) {
+    return (
+      <Card className="bg-black/20 backdrop-blur-lg border-red-500/20">
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">Failed to Generate Questions</h3>
+              <p className="text-gray-300">Unable to create quiz questions for {level.concept}</p>
+              <p className="text-gray-400 text-sm mt-2">Please check your internet connection and try again</p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                className="mt-4 bg-purple-600 hover:bg-purple-700"
+              >
+                Try Again
+              </Button>
             </div>
           </div>
         </CardContent>

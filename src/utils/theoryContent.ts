@@ -1,5 +1,5 @@
 
-const GEMINI_API_KEY = 'AIzaSyDp1_tOfLEFj-SuZkkJ_HudDvR60huRijE';
+const GEMINI_API_KEY = 'AIzaSyAv1w55nm72qtpFiij2FCBmQ0TxCAJ0iNg';
 
 export const generateTheoryContent = async (level: any): Promise<string> => {
   console.log(`Generating theory content for Level ${level.id}: ${level.title} - Concept: ${level.concept}`);
@@ -81,7 +81,7 @@ Generate content that is unique to Level ${level.id} and the specific concept of
     return generatedContent;
   } catch (error) {
     console.error('Error generating theory content for level', level.id, 'concept', level.concept, ':', error);
-    return getFallbackTheoryContent(level);
+    throw error; // Don't fall back to mock data - let the component handle the error
   }
 };
 
@@ -201,120 +201,6 @@ IMPORTANT: Return ONLY the JSON array, no additional text or formatting.`;
     throw new Error('Could not parse valid quiz questions from API response');
   } catch (error) {
     console.error('Error generating quiz questions for level', level.id, ':', error);
-    return getFallbackQuestions(level);
+    throw error; // Don't fall back to mock data - let the component handle the error
   }
-};
-
-const getFallbackTheoryContent = (level: any): string => {
-  console.log(`Using fallback theory content for Level ${level.id} - ${level.concept}`);
-  
-  const conceptSpecificContent: Record<string, string> = {
-    'Classical vs Quantum': `# CLASSICAL VS QUANTUM COMPUTING: THE FUNDAMENTAL PARADIGM SHIFT
-
-## Understanding the Core Differences
-Classical computers process information using bits that exist in definite states of 0 or 1. This binary foundation creates deterministic computational pathways where each operation produces predictable results.
-
-Quantum computing introduces qubits that can exist in superposition - simultaneously representing both 0 and 1 states. This fundamental difference enables quantum computers to explore multiple computational paths simultaneously.
-
-## The Quantum Advantage
-While classical systems follow strict logical pathways, quantum systems harness quantum mechanical phenomena like superposition, entanglement, and interference to process information in fundamentally new ways.
-
-## Practical Implications
-The transition from classical to quantum computing represents more than a technological upgrade - it's a complete paradigm shift in how we approach computational problems and information processing.`,
-
-    'Quantum Basics': `# QUANTUM COMPUTING FUNDAMENTALS
-
-## Core Principles
-Quantum computing harnesses three fundamental quantum mechanical phenomena: superposition, entanglement, and quantum interference. These principles work together to enable computational capabilities impossible with classical systems.
-
-## Superposition
-Allows qubits to exist in multiple states simultaneously, creating parallel computational pathways that can be explored at once.
-
-## Entanglement
-Creates correlations between qubits that persist regardless of physical separation, enabling complex quantum operations.
-
-## Quantum Interference
-Amplifies correct answers while canceling incorrect ones through careful manipulation of quantum states.
-
-## Building Blocks
-Understanding these quantum principles is essential for grasping how quantum algorithms achieve their remarkable speedups.`,
-
-    'Qubits and Superposition': `# QUBITS AND QUANTUM SUPERPOSITION
-
-## Mathematical Foundation
-A qubit state |ψ⟩ = α|0⟩ + β|1⟩ represents a unit vector in a two-dimensional complex vector space. The coefficients α and β are complex numbers satisfying |α|² + |β|² = 1.
-
-## Bloch Sphere Visualization
-Any qubit state can be represented on the Bloch sphere, where computational basis states |0⟩ and |1⟩ are at the poles, and superposition states exist across the sphere's surface.
-
-## Measurement and Collapse
-When measured, a qubit in superposition collapses to either |0⟩ or |1⟩ with probabilities |α|² and |β|² respectively. This probabilistic nature is fundamental to quantum computation.
-
-## Quantum Gates
-Single-qubit operations can be visualized as rotations on the Bloch sphere, providing an intuitive understanding of quantum operations.`
-  };
-
-  // Generate a unique fallback based on the level's specific concept
-  const baseContent = conceptSpecificContent[level.concept] || conceptSpecificContent['Quantum Basics'];
-  
-  return `${baseContent}
-
-## Level ${level.id} Context
-${level.description}
-
-This level specifically focuses on "${level.concept}" within the context of quantum computing education. The concepts explored here build upon previous knowledge and prepare you for more advanced quantum computing applications.
-
----
-*Note: This is fallback content. For the best learning experience, ensure you have an active internet connection for AI-generated personalized content.*`;
-};
-
-const getFallbackQuestions = (level: any) => {
-  console.log(`Using fallback quiz questions for Level ${level.id} - ${level.concept}`);
-  
-  const conceptQuestions: Record<string, any[]> = {
-    'Classical vs Quantum': [
-      {
-        question: `In Level ${level.id}, what is the fundamental difference between classical and quantum computing?`,
-        options: [
-          "Classical uses bits (0 or 1), quantum uses qubits (superposition)",
-          "Classical is faster than quantum",
-          "Quantum only works with binary data",
-          "There is no significant difference"
-        ],
-        correct: 0,
-        explanation: "The key difference is that classical bits exist in definite states (0 or 1), while qubits can exist in superposition of both states simultaneously."
-      },
-      {
-        question: "What enables quantum computers to potentially solve certain problems faster than classical computers?",
-        options: [
-          "Better processors",
-          "Quantum parallelism through superposition",
-          "More memory",
-          "Faster clock speeds"
-        ],
-        correct: 1,
-        explanation: "Quantum computers can explore multiple solution paths simultaneously through superposition, potentially offering exponential speedups for specific problems."
-      }
-    ],
-    'Quantum Basics': [
-      {
-        question: `What are the three fundamental quantum phenomena covered in Level ${level.id}?`,
-        options: [
-          "Speed, Memory, Processing",
-          "Superposition, Entanglement, Interference",
-          "Input, Output, Storage",
-          "Classical, Digital, Analog"
-        ],
-        correct: 1,
-        explanation: "The three fundamental quantum phenomena are superposition (multiple states), entanglement (quantum correlations), and interference (amplifying correct answers)."
-      }
-    ]
-  };
-
-  const questions = conceptQuestions[level.concept] || conceptQuestions['Quantum Basics'];
-  
-  return questions.map(q => ({
-    ...q,
-    question: q.question.includes('Level') ? q.question : `In Level ${level.id} (${level.concept}): ${q.question}`
-  }));
 };

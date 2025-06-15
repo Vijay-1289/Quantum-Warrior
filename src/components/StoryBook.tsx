@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Play, BookOpen, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, BookOpen, Loader2, AlertCircle } from 'lucide-react';
 import { type QuantumLevel } from '@/data/quantumLevels';
 import { getIllustrationComponent } from '@/components/SVGIllustrations';
 import { generateTheoryContent } from '@/utils/theoryContent';
@@ -14,6 +15,7 @@ interface StoryPage {
   concept: string;
   isTheoryPage?: boolean;
   isLoading?: boolean;
+  hasError?: boolean;
 }
 
 interface StoryBookProps {
@@ -54,7 +56,8 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
         illustration: getAdvancedIllustrationKey(level.concept),
         concept: "Detailed Theory",
         isTheoryPage: true,
-        isLoading: true
+        isLoading: true,
+        hasError: false
       },
       {
         id: 4,
@@ -89,6 +92,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                   ...page, 
                   content, 
                   isLoading: false,
+                  hasError: false,
                   title: `Deep Dive: ${level.concept}` 
                 }
               : page
@@ -98,26 +102,15 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
       } catch (error) {
         console.error(`Failed to generate AI content for Level ${level.id} - ${level.concept}:`, error);
         
-        const fallbackContent = `# Failed to Generate Custom Content
-
-Unfortunately, we couldn't generate personalized content for "${level.concept}" at this time. This might be due to connectivity issues or API limitations.
-
-## About ${level.concept}
-This level covers ${level.concept}, which is a fundamental concept in quantum computing. 
-
-## Level Context
-${level.description}
-
-## What You'll Learn
-The concepts in this level build upon previous knowledge and prepare you for advanced quantum applications.
-
----
-*Please check your internet connection and try again for the best learning experience with AI-generated content.*`;
-        
         setStoryPages(prevPages => 
           prevPages.map(page => 
             page.isTheoryPage 
-              ? { ...page, content: fallbackContent, isLoading: false }
+              ? { 
+                  ...page, 
+                  content: `Failed to generate AI content for "${level.concept}". Please check your internet connection and try again.`,
+                  isLoading: false,
+                  hasError: true
+                }
               : page
           )
         );
@@ -156,14 +149,14 @@ The concepts in this level build upon previous knowledge and prepare you for adv
     setTimeout(onComplete, 800);
   };
 
-  const currentPageData = storyPages[currentPage];
-
-  // Render the appropriate illustration component
   const renderIllustration = (illustrationKey: string | undefined) => {
     if (!illustrationKey) return null;
     const IllustrationComponent = getIllustrationComponent(illustrationKey);
     return <IllustrationComponent />;
   };
+
+  const totalPages = storyPages.length;
+  const currentPageData = storyPages[currentPage];
 
   if (!currentPageData) {
     return (
@@ -260,6 +253,14 @@ The concepts in this level build upon previous knowledge and prepare you for adv
                           <p className="text-amber-600 text-xs mt-2">Level {level.id} • This may take a moment</p>
                         </div>
                       </div>
+                    ) : currentPageData?.hasError ? (
+                      <div className="flex items-center justify-center h-64">
+                        <div className="text-center">
+                          <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
+                          <p className="text-red-700 font-semibold">Failed to generate AI content</p>
+                          <p className="text-red-600 text-sm mt-2">Please check your connection and try again</p>
+                        </div>
+                      </div>
                     ) : (
                       <div className={`text-amber-800 leading-relaxed text-sm space-y-3 overflow-y-auto ${
                         currentPageData?.isTheoryPage ? 'max-h-96' : 'max-h-80'
@@ -273,7 +274,7 @@ The concepts in this level build upon previous knowledge and prepare you for adv
                     )}
                     
                     {/* Theory Page Indicator */}
-                    {currentPageData?.isTheoryPage && !currentPageData?.isLoading && !isGeneratingContent && (
+                    {currentPageData?.isTheoryPage && !currentPageData?.isLoading && !isGeneratingContent && !currentPageData?.hasError && (
                       <div className="absolute bottom-4 right-6 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">
                         AI Generated • {level.concept}
                       </div>
