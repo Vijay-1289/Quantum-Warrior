@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, GamepadIcon } from 'lucide-react';
 
 interface AuthPageProps {
-  onAuthSuccess: () => void;
+  onAuthSuccess: (isNewUser: boolean) => void;
 }
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
@@ -34,6 +34,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
           title: "Welcome back!",
           description: "Successfully logged in to your account.",
         });
+        onAuthSuccess(false); // Existing user
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -47,8 +48,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
           title: "Account created!",
           description: "Please check your email to verify your account.",
         });
+        onAuthSuccess(true); // New user
       }
-      onAuthSuccess();
     } catch (error: any) {
       toast({
         title: "Authentication Error",

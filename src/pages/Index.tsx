@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { GameHero } from '@/components/GameHero';
 import { QuantumRoadmap } from '@/components/QuantumRoadmap';
 import { AuthPage } from '@/components/AuthPage';
+import { HauntingIntro } from '@/components/HauntingIntro';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +15,7 @@ const Index = () => {
   const { progress, loading: progressLoading } = useUserProgress();
   const [showAuth, setShowAuth] = useState(false);
   const [showRoadmap, setShowRoadmap] = useState(false);
+  const [showHauntingIntro, setShowHauntingIntro] = useState(false);
   const navigate = useNavigate();
 
   if (authLoading || progressLoading) {
@@ -52,8 +54,17 @@ const Index = () => {
     setShowRoadmap(false);
   };
 
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = (isNewUser: boolean) => {
     setShowAuth(false);
+    if (isNewUser) {
+      setShowHauntingIntro(true);
+    } else {
+      setShowRoadmap(true);
+    }
+  };
+
+  const handleHauntingComplete = () => {
+    setShowHauntingIntro(false);
     setShowRoadmap(true);
   };
 
@@ -61,6 +72,10 @@ const Index = () => {
     await signOut();
     setShowRoadmap(false);
   };
+
+  if (showHauntingIntro) {
+    return <HauntingIntro onComplete={handleHauntingComplete} />;
+  }
 
   if (showAuth) {
     return <AuthPage onAuthSuccess={handleAuthSuccess} />;
