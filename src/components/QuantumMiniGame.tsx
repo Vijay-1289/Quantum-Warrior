@@ -480,29 +480,31 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
       </Card>
 
       {/* Custom CSS for animations */}
-      <style jsx>{`
-        @keyframes fadeInUp {
-          0% {
-            opacity: 0;
-            transform: translateY(20px);
+      <style>
+        {`
+          @keyframes fadeInUp {
+            0% {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            100% {
+              opacity: 1;
+              transform: translateY(-10px);
+            }
           }
-          100% {
-            opacity: 1;
-            transform: translateY(-10px);
+          
+          @keyframes fadeOutUp {
+            0% {
+              opacity: 1;
+              transform: translateY(-10px);
+            }
+            100% {
+              opacity: 0;
+              transform: translateY(-30px);
+            }
           }
-        }
-        
-        @keyframes fadeOutUp {
-          0% {
-            opacity: 1;
-            transform: translateY(-10px);
-          }
-          100% {
-            opacity: 0;
-            transform: translateY(-30px);
-          }
-        }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
