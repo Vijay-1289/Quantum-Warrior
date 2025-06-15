@@ -90,64 +90,66 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
   const currentChapterLevels = quantumLevels.filter(level => level.chapter === selectedChapter);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-2 sm:p-4">
       <div className="container mx-auto max-w-7xl">
-        {/* Header with Home Button */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="text-center flex-1">
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-4">
+        {/* Header with Home Button - Mobile Optimized */}
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
+          <div className="text-center flex-1 order-2 sm:order-1">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-2 sm:mb-4">
               Quantum Learning Journey
             </h1>
-            <p className="text-xl text-purple-200 max-w-3xl mx-auto">
+            <p className="text-base sm:text-xl text-purple-200 max-w-3xl mx-auto px-2">
               Master quantum computing through 100 carefully crafted levels. Progress through chapters to unlock the secrets of the quantum realm!
             </p>
           </div>
-          <Link to="/">
-            <Button
-              variant="outline"
-              size="lg"
-              className="bg-transparent border-purple-400 text-purple-300 hover:bg-purple-900/20 hover:text-white"
-            >
-              <Home className="h-5 w-5 mr-2" />
-              Home
-            </Button>
-          </Link>
+          <div className="order-1 sm:order-2 w-full sm:w-auto flex justify-center sm:justify-end">
+            <Link to="/">
+              <Button
+                variant="outline"
+                size="lg"
+                className="bg-transparent border-purple-400 text-purple-300 hover:bg-purple-900/20 hover:text-white w-full sm:w-auto"
+              >
+                <Home className="h-5 w-5 mr-2" />
+                Home
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        {/* Progress Overview */}
-        <Card className="mb-8 bg-black/20 backdrop-blur-lg border-purple-500/20">
-          <CardHeader>
-            <CardTitle className="text-2xl text-white flex items-center gap-2">
-              <Trophy className="h-6 w-6 text-yellow-500" />
+        {/* Progress Overview - Mobile Optimized */}
+        <Card className="mb-6 sm:mb-8 bg-black/20 backdrop-blur-lg border-purple-500/20">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2 justify-center">
+              <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />
               Your Progress
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-400">{playerProgress.completedLevels.length}</div>
-                <p className="text-sm text-gray-400">Levels Completed</p>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-400">{playerProgress.completedLevels.length}</div>
+                <p className="text-xs sm:text-sm text-gray-400">Levels Completed</p>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-yellow-400">{playerProgress.totalStars}</div>
-                <p className="text-sm text-gray-400">Total Stars</p>
+                <div className="text-2xl sm:text-3xl font-bold text-yellow-400">{playerProgress.totalStars}</div>
+                <p className="text-xs sm:text-sm text-gray-400">Total Stars</p>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-purple-400">{playerProgress.currentLevel}</div>
-                <p className="text-sm text-gray-400">Current Level</p>
+                <div className="text-2xl sm:text-3xl font-bold text-purple-400">{playerProgress.currentLevel}</div>
+                <p className="text-xs sm:text-sm text-gray-400">Current Level</p>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-400">
+                <div className="text-2xl sm:text-3xl font-bold text-green-400">
                   {Math.round((playerProgress.completedLevels.length / quantumLevels.length) * 100)}%
                 </div>
-                <p className="text-sm text-gray-400">Overall Progress</p>
+                <p className="text-xs sm:text-sm text-gray-400">Overall Progress</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Chapter Selection */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        {/* Chapter Selection - Mobile Optimized */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
           {chapters.map((chapter, index) => {
             const IconComponent = getIconComponent(chapter.icon);
             const progress = getChapterProgress(chapter);
@@ -166,25 +168,25 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
                 }`}
                 onClick={() => isUnlocked && setSelectedChapter(chapter.id)}
               >
-                <CardContent className="p-4 text-center relative">
+                <CardContent className="p-3 sm:p-4 text-center relative">
                   {!isUnlocked && (
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center rounded-lg">
-                      <Lock className="h-8 w-8 text-gray-400" />
+                      <Lock className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
                     </div>
                   )}
-                  <IconComponent className={`h-8 w-8 mx-auto mb-2 ${isUnlocked ? 'text-white' : 'text-gray-400'}`} />
-                  <h3 className={`font-bold text-sm ${isUnlocked ? 'text-white' : 'text-gray-400'}`}>
+                  <IconComponent className={`h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 ${isUnlocked ? 'text-white' : 'text-gray-400'}`} />
+                  <h3 className={`font-bold text-xs sm:text-sm ${isUnlocked ? 'text-white' : 'text-gray-400'}`}>
                     Chapter {chapter.id}
                   </h3>
-                  <p className={`text-xs ${isUnlocked ? 'text-gray-300' : 'text-gray-500'}`}>
+                  <p className={`text-xs ${isUnlocked ? 'text-gray-300' : 'text-gray-500'} truncate`}>
                     {chapter.title}
                   </p>
                   {isUnlocked && (
                     <div className="mt-2">
-                      <Progress value={progress} className="h-2" />
+                      <Progress value={progress} className="h-1.5 sm:h-2" />
                       <p className="text-xs text-gray-400 mt-1">{Math.round(progress)}%</p>
                       {isCompleted && (
-                        <CheckCircle className="h-4 w-4 text-green-400 mx-auto mt-1" />
+                        <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-400 mx-auto mt-1" />
                       )}
                     </div>
                   )}
@@ -194,22 +196,22 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
           })}
         </div>
 
-        {/* Current Chapter Details */}
+        {/* Current Chapter Details - Mobile Optimized */}
         {currentChapter && (
-          <Card className="mb-8 bg-black/20 backdrop-blur-lg border-purple-500/20">
-            <CardHeader>
-              <CardTitle className="text-2xl text-white flex items-center gap-2">
-                {React.createElement(getIconComponent(currentChapter.icon), { className: "h-6 w-6" })}
+          <Card className="mb-6 sm:mb-8 bg-black/20 backdrop-blur-lg border-purple-500/20">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg sm:text-2xl text-white flex items-center gap-2 justify-center">
+                {React.createElement(getIconComponent(currentChapter.icon), { className: "h-5 w-5 sm:h-6 sm:w-6" })}
                 {currentChapter.title}
               </CardTitle>
-              <CardDescription className="text-gray-300">
+              <CardDescription className="text-gray-300 text-sm sm:text-base text-center px-2">
                 {currentChapter.description}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="mb-4">
-                <Progress value={getChapterProgress(currentChapter)} className="h-3" />
-                <p className="text-sm text-gray-400 mt-2">
+                <Progress value={getChapterProgress(currentChapter)} className="h-2 sm:h-3" />
+                <p className="text-xs sm:text-sm text-gray-400 mt-2 text-center">
                   Chapter Progress: {Math.round(getChapterProgress(currentChapter))}% 
                   {getChapterProgress(currentChapter) >= 80 && (
                     <span className="text-green-400 ml-2">✓ Chapter Complete!</span>
@@ -220,8 +222,8 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
           </Card>
         )}
 
-        {/* Level Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
+        {/* Level Grid - Mobile Optimized */}
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 mb-6 sm:mb-8">
           {currentChapterLevels.map((level) => {
             const unlocked = isLevelUnlocked(level);
             const completed = isLevelCompleted(level.id);
@@ -239,24 +241,24 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
                         : 'bg-gray-800/20 border-gray-600/20'
                     }`}
                   >
-                    <CardContent className="p-4 flex flex-col items-center justify-center h-full relative">
+                    <CardContent className="p-2 sm:p-4 flex flex-col items-center justify-center h-full relative">
                       {!unlocked && (
                         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center rounded-lg">
-                          <Lock className="h-6 w-6 text-gray-400" />
+                          <Lock className="h-4 w-4 sm:h-6 sm:w-6 text-gray-400" />
                         </div>
                       )}
                       
                       <div className="text-center">
-                        <div className={`text-2xl font-bold mb-2 ${unlocked ? 'text-white' : 'text-gray-400'}`}>
+                        <div className={`text-lg sm:text-2xl font-bold mb-1 sm:mb-2 ${unlocked ? 'text-white' : 'text-gray-400'}`}>
                           {level.id}
                         </div>
                         
                         {completed && (
-                          <div className="flex justify-center mb-2">
+                          <div className="flex justify-center mb-1 sm:mb-2">
                             {[...Array(3)].map((_, i) => (
                               <Star
                                 key={i}
-                                className={`h-4 w-4 ${
+                                className={`h-3 w-3 sm:h-4 sm:w-4 ${
                                   i < stars ? 'text-yellow-400 fill-current' : 'text-gray-400'
                                 }`}
                               />
@@ -264,18 +266,18 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
                           </div>
                         )}
                         
-                        <h4 className={`font-semibold text-xs ${unlocked ? 'text-white' : 'text-gray-400'}`}>
+                        <h4 className={`font-semibold text-xs ${unlocked ? 'text-white' : 'text-gray-400'} line-clamp-2`}>
                           {level.title}
                         </h4>
                         
                         <Badge
-                          className={`mt-2 text-xs ${
+                          className={`mt-1 sm:mt-2 text-xs ${
                             level.difficulty === 'Beginner' ? 'bg-green-600/20 text-green-300' :
                             level.difficulty === 'Intermediate' ? 'bg-yellow-600/20 text-yellow-300' :
                             level.difficulty === 'Advanced' ? 'bg-orange-600/20 text-orange-300' :
                             level.difficulty === 'Expert' ? 'bg-red-600/20 text-red-300' :
                             'bg-purple-600/20 text-purple-300'
-                          }`}
+                          } px-1 py-0 text-xs`}
                         >
                           {level.difficulty}
                         </Badge>
@@ -285,12 +287,12 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
                 </DialogTrigger>
                 
                 {unlocked && (
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-slate-900 to-purple-900 border border-purple-500/20">
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-slate-900 to-purple-900 border border-purple-500/20 mx-2 sm:mx-auto">
                     <DialogHeader>
-                      <DialogTitle className="text-2xl text-white">
+                      <DialogTitle className="text-xl sm:text-2xl text-white">
                         Level {level.id}: {level.title}
                       </DialogTitle>
-                      <DialogDescription className="text-gray-300">
+                      <DialogDescription className="text-gray-300 text-sm sm:text-base">
                         {level.description}
                       </DialogDescription>
                     </DialogHeader>
