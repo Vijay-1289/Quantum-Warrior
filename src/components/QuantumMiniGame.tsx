@@ -129,14 +129,18 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
     
     if (isCorrect) {
       setScore(score + 100);
+      // Add 2 seconds for correct answer
+      setTimeLeft(prev => prev + 2);
       toast({
         title: "Excellent! 🎉",
-        description: "You're mastering quantum concepts!",
+        description: "You're mastering quantum concepts! +2 seconds bonus!",
       });
     } else {
+      // Subtract 2 seconds for wrong answer, but don't go below 0
+      setTimeLeft(prev => Math.max(0, prev - 2));
       toast({
         title: "Not quite right",
-        description: "Review the explanation and try again!",
+        description: "Review the explanation and try again! -2 seconds penalty",
         variant: "destructive"
       });
     }
@@ -315,7 +319,9 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
         <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
           <CardContent className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-400">{timeLeft}s</div>
+              <div className={`text-2xl font-bold ${timeLeft <= 10 ? 'text-red-400' : 'text-orange-400'}`}>
+                {timeLeft}s
+              </div>
               <p className="text-sm text-gray-400">Time Remaining</p>
             </div>
           </CardContent>
