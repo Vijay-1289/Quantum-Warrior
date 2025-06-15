@@ -3,12 +3,16 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
   background: transparent;
 }
 
 #root {
   min-height: 100vh;
+  max-height: 100vh;
   width: 100%;
+  overflow: hidden;
 }
 
 .logo {
@@ -45,4 +49,19 @@ html, body {
 
 .read-the-docs {
   color: #888;
+}
+
+/* Ensure proper viewport handling for different screen sizes */
+@media (max-height: 600px) {
+  .container {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
 }
