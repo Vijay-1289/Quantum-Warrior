@@ -1,7 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 interface UserProgress {
@@ -12,7 +10,6 @@ interface UserProgress {
 }
 
 export const useUserProgress = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [progress, setProgress] = useState<UserProgress>({
     completedLevels: [],
@@ -22,110 +19,45 @@ export const useUserProgress = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Load progress from database when user logs in
+  // Load progress from localStorage when component mounts
   useEffect(() => {
-    if (user) {
-      loadProgressFromDatabase();
-    } else {
-      // Load from localStorage if not logged in (fallback)
-      loadProgressFromLocalStorage();
-    }
-  }, [user]);
+    loadProgressFromLocalStorage();
+  }, []);
 
-  const loadProgressFromDatabase = async () => {
-    if (!user) return;
-
+  const loadProgressFromLocalStorage = () => {
     try {
-      const { data, error } = await supabase
-        .from('user_progress')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      if (data) {
+      const saved = localStorage.getItem('quantumStoryProgress');
+      if (saved) {
+        const parsed = JSON.parse(saved);
         setProgress({
-          completedLevels: data.completed_levels || [],
-          currentLevel: data.current_level || 1,
-          totalStars: data.total_stars || 0,
-          levelStars: (data.level_stars as Record<number, number>) || {},
+          completedLevels: parsed.completedLevels || [],
+          currentLevel: parsed.currentLevel || 1,
+          totalStars: parsed.totalStars || 0,
+          levelStars: parsed.levelStars || {},
         });
-      } else {
-        // New user - check if they have localStorage data to migrate
-        const localProgress = localStorage.getItem('quantumStoryProgress');
-        if (localProgress) {
-          const parsed = JSON.parse(localProgress);
-          const migratedProgress = {
-            completedLevels: parsed.completedLevels || [],
-            currentLevel: parsed.currentLevel || 1,
-            totalStars: parsed.totalStars || 0,
-            levelStars: parsed.levelStars || {},
-          };
-          setProgress(migratedProgress);
-          await saveProgressToDatabase(migratedProgress);
-          // Clear localStorage after migration
-          localStorage.removeItem('quantumStoryProgress');
-          toast({
-            title: "Progress Migrated!",
-            description: "Your local progress has been saved to your account.",
-          });
-        }
       }
     } catch (error) {
-      console.error('Error loading progress:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load your progress. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Error loading progress from localStorage:', error);
+      // If there's an error, just use default values
     } finally {
       setLoading(false);
     }
   };
 
-  const loadProgressFromLocalStorage = () => {
-    const saved = localStorage.getItem('quantumStoryProgress');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setProgress({
-        completedLevels: parsed.completedLevels || [],
-        currentLevel: parsed.currentLevel || 1,
-        totalStars: parsed.totalStars || 0,
-        levelStars: parsed.levelStars || {},
-      });
-    }
-    setLoading(false);
-  };
-
-  const saveProgressToDatabase = async (newProgress: UserProgress) => {
-    if (!user) return;
-
+  const saveProgressToLocalStorage = (newProgress: UserProgress) => {
     try {
-      const { error } = await supabase
-        .from('user_progress')
-        .upsert({
-          user_id: user.id,
-          completed_levels: newProgress.completedLevels,
-          current_level: newProgress.currentLevel,
-          total_stars: newProgress.totalStars,
-          level_stars: newProgress.levelStars,
-        });
-
-      if (error) throw error;
+      localStorage.setItem('quantumStoryProgress', JSON.stringify(newProgress));
     } catch (error) {
-      console.error('Error saving progress:', error);
+      console.error('Error saving progress to localStorage:', error);
       toast({
         title: "Save Error",
-        description: "Failed to save your progress. Please try again.",
+        description: "Failed to save your progress locally.",
         variant: "destructive",
       });
     }
   };
 
-  const updateProgress = async (levelId: number, stars: number) => {
+  const updateProgress = (levelId: number, stars: number) => {
     const wasAlreadyCompleted = progress.completedLevels.includes(levelId);
     const previousStars = progress.levelStars[levelId] || 0;
     const starDifference = Math.max(0, stars - previousStars);
@@ -144,15 +76,14 @@ export const useUserProgress = () => {
     };
 
     setProgress(newProgress);
-
-    if (user) {
-      await saveProgressToDatabase(newProgress);
-    } else {
-      // Fallback to localStorage if not logged in
-      localStorage.setItem('quantumStoryProgress', JSON.stringify(newProgress));
-    }
+    saveProgressToLocalStorage(newProgress);
 
     console.log(`Level ${levelId} completed with ${stars} stars. Total stars: ${newProgress.totalStars}`);
+    
+    toast({
+      title: "Progress Saved!",
+      description: `Level ${levelId} completed with ${stars} stars.`,
+    });
   };
 
   return {
