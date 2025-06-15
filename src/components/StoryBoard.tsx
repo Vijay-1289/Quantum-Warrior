@@ -59,15 +59,33 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
   const getChapterProgress = (chapter: Chapter): number => {
     const chapterLevels = quantumLevels.filter(level => level.chapter === chapter.id);
     const completedInChapter = chapterLevels.filter(level => isLevelCompleted(level.id)).length;
-    return (completedInChapter / chapterLevels.length) * 100;
+    return chapterLevels.length > 0 ? (completedInChapter / chapterLevels.length) * 100 : 0;
   };
 
   const isChapterUnlocked = (chapterIndex: number): boolean => {
     if (chapterIndex === 0) return true;
+    
     // Chapter is unlocked if previous chapter has at least 80% completion
     const prevChapter = chapters[chapterIndex - 1];
-    return getChapterProgress(prevChapter) >= 80;
+    const prevChapterProgress = getChapterProgress(prevChapter);
+    return prevChapterProgress >= 80;
   };
+
+  // Auto-advance to next chapter if current chapter is completed
+  useEffect(() => {
+    const currentChapterProgress = getChapterProgress(chapters.find(c => c.id === selectedChapter)!);
+    if (currentChapterProgress >= 80) {
+      const nextChapterIndex = chapters.findIndex(c => c.id === selectedChapter) + 1;
+      if (nextChapterIndex < chapters.length && isChapterUnlocked(nextChapterIndex)) {
+        // Don't auto-advance if user manually selected a chapter
+        if (!location.state?.selectedChapter) {
+          setTimeout(() => {
+            setSelectedChapter(chapters[nextChapterIndex].id);
+          }, 2000);
+        }
+      }
+    }
+  }, [playerProgress.completedLevels, selectedChapter, location.state]);
 
   const currentChapter = chapters.find(c => c.id === selectedChapter);
   const currentChapterLevels = quantumLevels.filter(level => level.chapter === selectedChapter);
@@ -135,6 +153,7 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
             const IconComponent = getIconComponent(chapter.icon);
             const progress = getChapterProgress(chapter);
             const isUnlocked = isChapterUnlocked(index);
+            const isCompleted = progress >= 80;
             
             return (
               <Card
@@ -165,6 +184,9 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
                     <div className="mt-2">
                       <Progress value={progress} className="h-2" />
                       <p className="text-xs text-gray-400 mt-1">{Math.round(progress)}%</p>
+                      {isCompleted && (
+                        <CheckCircle className="h-4 w-4 text-green-400 mx-auto mt-1" />
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -189,7 +211,10 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
               <div className="mb-4">
                 <Progress value={getChapterProgress(currentChapter)} className="h-3" />
                 <p className="text-sm text-gray-400 mt-2">
-                  Chapter Progress: {Math.round(getChapterProgress(currentChapter))}%
+                  Chapter Progress: {Math.round(getChapterProgress(currentChapter))}% 
+                  {getChapterProgress(currentChapter) >= 80 && (
+                    <span className="text-green-400 ml-2">✓ Chapter Complete!</span>
+                  )}
                 </p>
               </div>
             </CardContent>
