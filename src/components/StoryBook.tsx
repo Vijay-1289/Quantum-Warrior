@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,7 +46,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
       if (section.trim().startsWith('##')) {
         const headingText = section.replace(/##\s*/, '').trim();
         return (
-          <h4 key={sectionIndex} className="text-lg font-bold text-amber-800 mb-3 mt-4 border-l-4 border-amber-400 pl-3">
+          <h4 key={sectionIndex} className="text-sm sm:text-lg font-bold text-amber-800 mb-2 sm:mb-3 mt-2 sm:mt-4 border-l-4 border-amber-400 pl-2 sm:pl-3">
             {headingText}
           </h4>
         );
@@ -55,7 +56,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
       if (section.trim().startsWith('###')) {
         const subheadingText = section.replace(/###\s*/, '').trim();
         return (
-          <h5 key={sectionIndex} className="text-base font-semibold text-amber-700 mb-2 mt-3">
+          <h5 key={sectionIndex} className="text-xs sm:text-base font-semibold text-amber-700 mb-1 sm:mb-2 mt-2 sm:mt-3">
             {subheadingText}
           </h5>
         );
@@ -68,18 +69,18 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
         const regularText = lines.filter(line => !line.trim().startsWith('•') && !line.trim().startsWith('-'));
         
         return (
-          <div key={sectionIndex} className="mb-4">
+          <div key={sectionIndex} className="mb-2 sm:mb-4">
             {regularText.map((text, idx) => (
-              <p key={idx} className="text-justify mb-2">
+              <p key={idx} className="text-justify mb-1 sm:mb-2 text-xs sm:text-sm">
                 {renderBasicFormatting(text)}
               </p>
             ))}
             {bulletPoints.length > 0 && (
-              <ul className="list-none space-y-2 ml-4">
+              <ul className="list-none space-y-1 sm:space-y-2 ml-2 sm:ml-4">
                 {bulletPoints.map((point, idx) => (
                   <li key={idx} className="flex items-start">
-                    <span className="text-amber-600 mr-2 mt-1">•</span>
-                    <span className="text-justify">{renderBasicFormatting(point.replace(/^[•-]\s*/, ''))}</span>
+                    <span className="text-amber-600 mr-1 sm:mr-2 mt-0.5 sm:mt-1 text-xs sm:text-sm">•</span>
+                    <span className="text-justify text-xs sm:text-sm">{renderBasicFormatting(point.replace(/^[•-]\s*/, ''))}</span>
                   </li>
                 ))}
               </ul>
@@ -90,7 +91,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
       
       // Regular paragraph
       return (
-        <p key={sectionIndex} className="text-justify mb-3 leading-relaxed">
+        <p key={sectionIndex} className="text-justify mb-2 sm:mb-3 leading-relaxed text-xs sm:text-sm">
           {renderBasicFormatting(section)}
         </p>
       );
@@ -320,6 +321,67 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
     return <IllustrationComponent />;
   };
 
+  // Initialize story pages and generate AI content immediately when component mounts
+  useEffect(() => {
+    console.log(`StoryBook mounted for Level ${level.id}: ${level.title} - Concept: ${level.concept}`);
+    
+    const initialPages = generateInitialPages(level);
+    setStoryPages(initialPages);
+    setIsGeneratingContent(true);
+    setRetryCount(0);
+    
+    // Generate theory content immediately for this specific level
+    const loadTheoryContent = async () => {
+      console.log(`Starting AI content generation for Level ${level.id} - Concept: ${level.concept}`);
+      
+      try {
+        // Get the story content from page 2 to pass as reference
+        const storyContent = `${level.storyText}\n\nAs you can see, ${level.concept} plays a crucial role in this quantum realm. The story you just experienced directly relates to the theoretical foundations you're about to learn.`;
+        
+        const content = await generateTheoryContent(level, storyContent);
+        console.log(`AI theory content successfully generated for Level ${level.id} - ${level.concept}:`, content.substring(0, 100) + '...');
+        
+        // Store the generated theory content for quiz generation
+        setGeneratedTheoryContent(content);
+        
+        setStoryPages(prevPages => 
+          prevPages.map(page => 
+            page.isTheoryPage 
+              ? { 
+                  ...page, 
+                  content, 
+                  isLoading: false,
+                  hasError: false,
+                  title: `Deep Dive: ${level.concept}`,
+                  aiGeneratedSVG: generateRelevantSVG(level.concept, `Deep Dive: ${level.concept}`, content)
+                }
+              : page
+          )
+        );
+        setIsGeneratingContent(false);
+      } catch (error) {
+        console.error(`Failed to generate AI content for Level ${level.id} - ${level.concept}:`, error);
+        
+        setStoryPages(prevPages => 
+          prevPages.map(page => 
+            page.isTheoryPage 
+              ? { 
+                  ...page, 
+                  content: `Failed to generate AI content for "${level.concept}". This may be due to network issues or API limits. Please wait a moment and try refreshing the page.`,
+                  isLoading: false,
+                  hasError: true
+                }
+              : page
+          )
+        );
+        setIsGeneratingContent(false);
+      }
+    };
+
+    loadTheoryContent();
+    setTimeout(() => setBookOpened(true), 500);
+  }, [level.id, level.concept, level.title]);
+
   const currentPageData = storyPages[currentPage];
 
   if (!currentPageData) {
@@ -334,9 +396,9 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
-      <div className="relative">
-        {/* Book Container */}
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-2 sm:p-4">
+      <div className="relative w-full max-w-6xl">
+        {/* Book Container - Mobile Responsive */}
         <div 
           className={`relative transform transition-all duration-1000 ease-out ${
             bookOpened ? 'scale-100 rotate-0' : 'scale-75 rotate-12'
@@ -352,49 +414,54 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
               bookOpened ? 'rotateY-90' : 'rotateY-0'
             }`}
             style={{
-              width: '800px',
-              height: '600px',
+              width: '100%',
+              maxWidth: '800px',
+              height: 'auto',
+              aspectRatio: '4/3',
               transformOrigin: 'left center',
               backfaceVisibility: 'hidden'
             }}
           >
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-full p-4">
               <div className="text-center text-white">
-                <BookOpen className="h-16 w-16 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Level {level.id}</h2>
-                <p className="text-lg">{level.title}</p>
-                <p className="text-sm text-amber-200 mt-2">{level.concept}</p>
+                <BookOpen className="h-8 w-8 sm:h-16 sm:w-16 mx-auto mb-2 sm:mb-4" />
+                <h2 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2">Level {level.id}</h2>
+                <p className="text-sm sm:text-lg">{level.title}</p>
+                <p className="text-xs sm:text-sm text-amber-200 mt-1 sm:mt-2">{level.concept}</p>
               </div>
             </div>
           </div>
 
-          {/* Book Pages */}
+          {/* Book Pages - Mobile Responsive */}
           <Card 
-            className={`relative bg-gradient-to-br from-amber-50 to-yellow-50 border-4 border-amber-800 shadow-2xl transform transition-all duration-1000 ease-out ${
+            className={`relative bg-gradient-to-br from-amber-50 to-yellow-50 border-2 sm:border-4 border-amber-800 shadow-2xl transform transition-all duration-1000 ease-out ${
               bookOpened ? 'rotateY-0' : 'rotateY-90'
             }`}
             style={{
-              width: '800px',
-              height: '600px',
+              width: '100%',
+              maxWidth: '800px',
+              height: 'auto',
+              minHeight: '400px',
+              aspectRatio: '4/3',
               transformOrigin: 'left center',
               backfaceVisibility: 'hidden'
             }}
           >
             {/* Page Content */}
-            <div className="h-full flex">
+            <div className="h-full flex flex-col sm:flex-row">
               {/* Left Page - AI-Generated SVG Illustration */}
-              <div className="w-1/2 p-6 border-r-2 border-amber-200 relative overflow-hidden bg-gradient-to-br from-purple-50 to-blue-50">
+              <div className="w-full sm:w-1/2 p-3 sm:p-6 sm:border-r-2 border-amber-200 relative overflow-hidden bg-gradient-to-br from-purple-50 to-blue-50 order-1 sm:order-1">
                 <div 
                   className={`transform transition-all duration-500 ease-out ${
                     isFlipping ? 'scale-95 opacity-50 rotate-y-12' : 'scale-100 opacity-100 rotate-y-0'
                   }`}
                 >
-                  <div className="h-full flex items-center justify-center">
+                  <div className="h-32 sm:h-full flex items-center justify-center">
                     {renderIllustration(currentPageData?.illustration, currentPageData?.aiGeneratedSVG)}
                   </div>
                   {/* AI Generated indicator */}
                   {currentPageData?.aiGeneratedSVG && (
-                    <div className="absolute bottom-2 left-2 bg-purple-100 text-purple-600 px-2 py-1 rounded text-xs font-semibold">
+                    <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 bg-purple-100 text-purple-600 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-semibold">
                       AI Generated
                     </div>
                   )}
@@ -402,40 +469,40 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
               </div>
 
               {/* Right Page - Enhanced Content */}
-              <div className="w-1/2 p-6 relative overflow-hidden">
+              <div className="w-full sm:w-1/2 p-3 sm:p-6 relative overflow-hidden order-2 sm:order-2">
                 {currentPage < storyPages.length - 1 ? (
                   <div 
                     className={`transform transition-all duration-500 ease-out ${
                       isFlipping ? 'scale-95 opacity-50 translate-x-4' : 'scale-100 opacity-100 translate-x-0'
                     }`}
                   >
-                    <h3 className="text-xl font-bold text-amber-900 mb-4 text-center border-b-2 border-amber-300 pb-2">
+                    <h3 className="text-sm sm:text-xl font-bold text-amber-900 mb-2 sm:mb-4 text-center border-b-2 border-amber-300 pb-1 sm:pb-2">
                       {currentPageData?.title}
                     </h3>
                     
                     {/* Loading state for theory page */}
                     {currentPageData?.isLoading || (currentPageData?.isTheoryPage && isGeneratingContent) ? (
-                      <div className="flex items-center justify-center h-64">
+                      <div className="flex items-center justify-center h-32 sm:h-64">
                         <div className="text-center">
-                          <Loader2 className="h-8 w-8 animate-spin text-amber-600 mx-auto mb-4" />
-                          <p className="text-amber-700 font-semibold">Generating AI content for</p>
-                          <p className="text-amber-800 text-lg font-bold">{level.concept}</p>
-                          <p className="text-amber-600 text-xs mt-2">Level {level.id} • This may take a moment</p>
+                          <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-amber-600 mx-auto mb-2 sm:mb-4" />
+                          <p className="text-amber-700 font-semibold text-xs sm:text-sm">Generating AI content for</p>
+                          <p className="text-amber-800 text-sm sm:text-lg font-bold">{level.concept}</p>
+                          <p className="text-amber-600 text-xs mt-1 sm:mt-2">Level {level.id} • This may take a moment</p>
                           {retryCount > 0 && (
                             <p className="text-amber-500 text-xs mt-1">Attempt {retryCount + 1} of 3</p>
                           )}
                         </div>
                       </div>
                     ) : currentPageData?.hasError ? (
-                      <div className="flex items-center justify-center h-64">
+                      <div className="flex items-center justify-center h-32 sm:h-64">
                         <div className="text-center">
-                          <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
-                          <p className="text-red-700 font-semibold">Failed to generate AI content</p>
-                          <p className="text-red-600 text-sm mt-2">Please check your connection and try again</p>
+                          <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-red-500 mx-auto mb-2 sm:mb-4" />
+                          <p className="text-red-700 font-semibold text-xs sm:text-sm">Failed to generate AI content</p>
+                          <p className="text-red-600 text-xs sm:text-sm mt-1 sm:mt-2">Please check your connection and try again</p>
                           {retryCount < 3 && (
                             <Button
                               onClick={handleRetryGeneration}
-                              className="mt-4 bg-amber-600 hover:bg-amber-700 text-white text-sm px-4 py-2"
+                              className="mt-2 sm:mt-4 bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2"
                               disabled={isGeneratingContent}
                             >
                               {isGeneratingContent ? 'Retrying...' : 'Retry Generation'}
@@ -444,8 +511,8 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                         </div>
                       </div>
                     ) : (
-                      <div className={`text-amber-800 leading-relaxed text-sm overflow-y-auto ${
-                        currentPageData?.isTheoryPage ? 'max-h-96' : 'max-h-80'
+                      <div className={`text-amber-800 leading-relaxed overflow-y-auto ${
+                        currentPageData?.isTheoryPage ? 'max-h-48 sm:max-h-96' : 'max-h-40 sm:max-h-80'
                       }`}>
                         {renderFormattedText(currentPageData?.content || '')}
                       </div>
@@ -453,7 +520,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                     
                     {/* Theory Page Indicator */}
                     {currentPageData?.isTheoryPage && !currentPageData?.isLoading && !isGeneratingContent && !currentPageData?.hasError && (
-                      <div className="absolute bottom-4 right-6 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">
+                      <div className="absolute bottom-2 right-3 sm:bottom-4 sm:right-6 bg-purple-100 text-purple-700 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs font-semibold">
                         AI Generated • {level.concept}
                       </div>
                     )}
@@ -462,14 +529,14 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                   // Final Page - Text content only, no SVG on right side
                   <div className="flex flex-col items-center justify-center h-full">
                     <div className="text-center">
-                      <h3 className="text-xl font-bold text-amber-900 mb-4">Ready to Apply Your Knowledge?</h3>
-                      <p className="text-sm text-amber-700 mb-6">You've mastered {level.concept}. Now put it into practice!</p>
+                      <h3 className="text-sm sm:text-xl font-bold text-amber-900 mb-2 sm:mb-4">Ready to Apply Your Knowledge?</h3>
+                      <p className="text-xs sm:text-sm text-amber-700 mb-3 sm:mb-6">You've mastered {level.concept}. Now put it into practice!</p>
                       <Button
                         onClick={handleStartChallenge}
-                        size="lg"
-                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transform transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                        size="sm"
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transform transition-all duration-200 hover:scale-105 hover:shadow-lg text-xs sm:text-sm px-3 sm:px-4 py-2"
                       >
-                        <Play className="h-5 w-5 mr-2" />
+                        <Play className="h-3 w-3 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
                         Start {level.concept} Challenge
                       </Button>
                     </div>
@@ -478,19 +545,19 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
               </div>
             </div>
 
-            {/* Navigation Controls */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-4">
+            {/* Navigation Controls - Mobile Responsive */}
+            <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 sm:gap-4">
               <Button
                 onClick={handlePrevPage}
                 disabled={currentPage === 0 || isFlipping}
                 variant="outline"
                 size="sm"
-                className="border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
               
-              <span className="text-amber-700 font-medium">
+              <span className="text-amber-700 font-medium text-xs sm:text-sm">
                 {currentPage + 1} / {storyPages.length}
               </span>
               
@@ -499,24 +566,24 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                 disabled={currentPage >= storyPages.length - 1 || isFlipping}
                 variant="outline"
                 size="sm"
-                className="border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
 
-            <div className="absolute bottom-2 left-6 text-xs text-amber-600">
+            <div className="absolute bottom-1 left-2 sm:bottom-2 sm:left-6 text-xs text-amber-600">
               Level {level.id} • Page {currentPage + 1} • {level.concept}
             </div>
           </Card>
         </div>
 
-        {/* Enhanced Floating Quantum Particles */}
+        {/* Enhanced Floating Quantum Particles - Mobile Optimized */}
         <div className="absolute inset-0 pointer-events-none">
-          {[...Array(20)].map((_, i) => (
+          {[...Array(10)].map((_, i) => (
             <div
               key={i}
-              className={`absolute w-2 h-2 rounded-full opacity-60 animate-bounce ${
+              className={`absolute w-1 h-1 sm:w-2 sm:h-2 rounded-full opacity-60 animate-bounce ${
                 i % 3 === 0 ? 'bg-yellow-300' : i % 3 === 1 ? 'bg-blue-300' : 'bg-purple-300'
               }`}
               style={{
