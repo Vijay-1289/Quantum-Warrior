@@ -65,7 +65,7 @@ const Index = () => {
 
   const handleHauntingComplete = () => {
     setShowHauntingIntro(false);
-    // Directly navigate to the story board after haunting intro
+    // Navigate directly to story board for new users after haunting intro
     navigate('/story-board');
   };
 
