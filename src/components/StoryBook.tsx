@@ -120,9 +120,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
 
     loadTheoryContent();
     setTimeout(() => setBookOpened(true), 500);
-  }, [level.id, level.concept, level.title]); // Add dependencies to ensure re-generation for different levels
-
-  const totalPages = storyPages.length;
+  }, [level.id, level.concept, level.title]);
 
   const handleNextPage = () => {
     if (currentPage < storyPages.length - 1 && !isFlipping) {
@@ -155,7 +153,6 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
     return <IllustrationComponent />;
   };
 
-  const totalPages = storyPages.length;
   const currentPageData = storyPages[currentPage];
 
   if (!currentPageData) {
