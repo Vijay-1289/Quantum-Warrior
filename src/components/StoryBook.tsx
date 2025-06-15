@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Play, BookOpen, Loader2, AlertCircle } from 
 import { type QuantumLevel } from '@/data/quantumLevels';
 import { getIllustrationComponent } from '@/components/SVGIllustrations';
 import { generateTheoryContent } from '@/utils/theoryContent';
+import { generateRelevantSVG } from '@/utils/svgGeneration';
 
 interface StoryPage {
   id: number;
@@ -15,11 +16,13 @@ interface StoryPage {
   isTheoryPage?: boolean;
   isLoading?: boolean;
   hasError?: boolean;
+  aiGeneratedSVG?: string;
 }
 
 interface StoryBookProps {
   level: QuantumLevel;
   onComplete: () => void;
+  onBack: () => void;
 }
 
 export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
@@ -53,14 +56,16 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
         title: "The Quantum Adventure Begins",
         content: `Welcome, brave Quantum Warrior, to Level ${level.id}: ${level.title}!\n\nIn this chapter of your epic journey through the quantum realm, you will master the profound mysteries of ${level.concept}. The ancient quantum masters have left knowledge that will be essential for defeating the Quantum Villain.\n\nThis level focuses specifically on "${level.concept}" - a ${level.difficulty} level concept that will challenge your understanding of quantum reality!\n\nPrepare yourself, for the concepts ahead will unlock new dimensions of quantum knowledge!`,
         illustration: "quantum_warrior_intro",
-        concept: "Introduction"
+        concept: "Introduction",
+        aiGeneratedSVG: generateRelevantSVG(level.concept, "The Quantum Adventure Begins", `Welcome, brave Quantum Warrior, to Level ${level.id}: ${level.title}!`)
       },
       {
         id: 2,
         title: `The Tale of ${level.concept}`,
         content: `${level.storyText}\n\nAs you can see, ${level.concept} plays a crucial role in this quantum realm. The story you just experienced directly relates to the theoretical foundations you're about to learn.\n\nNext, you'll dive deep into the scientific principles behind ${level.concept}, gaining the knowledge needed to master this level's challenges.`,
         illustration: getAdvancedIllustrationKey(level.concept),
-        concept: level.concept
+        concept: level.concept,
+        aiGeneratedSVG: generateRelevantSVG(level.concept, `The Tale of ${level.concept}`, level.storyText)
       },
       {
         id: 3,
@@ -70,14 +75,16 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
         concept: "Detailed Theory",
         isTheoryPage: true,
         isLoading: true,
-        hasError: false
+        hasError: false,
+        aiGeneratedSVG: generateRelevantSVG(level.concept, `Deep Dive: ${level.concept}`, "theoretical foundations and scientific principles")
       },
       {
         id: 4,
         title: "Ready for the Quantum Challenge",
         content: `Outstanding! You have now mastered the theoretical foundations of ${level.concept}. Your mind has been expanded with quantum knowledge that few possess.\n\nYou are now ready to face the Quantum Villain in the ${level.gameType} challenge. Remember: Every aspect of your upcoming battle directly relates to ${level.concept} - the very concept you've just studied.\n\nTrust in your quantum wisdom and apply the principles of ${level.concept} to emerge victorious!`,
         illustration: "quantum_battle_ready",
-        concept: "Final Preparation"
+        concept: "Final Preparation",
+        aiGeneratedSVG: generateRelevantSVG(level.concept, "Ready for the Quantum Challenge", "battle challenge victory preparation")
       }
     ];
   };
@@ -113,7 +120,8 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                   content, 
                   isLoading: false,
                   hasError: false,
-                  title: `Deep Dive: ${level.concept}` 
+                  title: `Deep Dive: ${level.concept}`,
+                  aiGeneratedSVG: generateRelevantSVG(level.concept, `Deep Dive: ${level.concept}`, content)
                 }
               : page
           )
@@ -177,7 +185,8 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                 content, 
                 isLoading: false,
                 hasError: false,
-                title: `Deep Dive: ${level.concept}` 
+                title: `Deep Dive: ${level.concept}`,
+                aiGeneratedSVG: generateRelevantSVG(level.concept, `Deep Dive: ${level.concept}`, content)
               }
             : page
         )
@@ -231,7 +240,18 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
     setTimeout(onComplete, 800);
   };
 
-  const renderIllustration = (illustrationKey: string | undefined) => {
+  const renderIllustration = (illustrationKey: string | undefined, aiSVG?: string) => {
+    // Prioritize AI-generated SVG if available
+    if (aiSVG) {
+      return (
+        <div 
+          className="w-full h-full flex items-center justify-center"
+          dangerouslySetInnerHTML={{ __html: aiSVG }}
+        />
+      );
+    }
+    
+    // Fallback to existing illustrations
     if (!illustrationKey) return null;
     const IllustrationComponent = getIllustrationComponent(illustrationKey);
     return <IllustrationComponent />;
@@ -299,7 +319,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
           >
             {/* Page Content */}
             <div className="h-full flex">
-              {/* Left Page - Enhanced SVG Illustration */}
+              {/* Left Page - AI-Generated SVG Illustration */}
               <div className="w-1/2 p-6 border-r-2 border-amber-200 relative overflow-hidden bg-gradient-to-br from-purple-50 to-blue-50">
                 <div 
                   className={`transform transition-all duration-500 ease-out ${
@@ -307,8 +327,14 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                   }`}
                 >
                   <div className="h-full flex items-center justify-center">
-                    {renderIllustration(currentPageData?.illustration)}
+                    {renderIllustration(currentPageData?.illustration, currentPageData?.aiGeneratedSVG)}
                   </div>
+                  {/* AI Generated indicator */}
+                  {currentPageData?.aiGeneratedSVG && (
+                    <div className="absolute bottom-2 left-2 bg-purple-100 text-purple-600 px-2 py-1 rounded text-xs font-semibold">
+                      AI Generated
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -377,7 +403,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                   // Final Page
                   <div className="flex flex-col items-center justify-center h-full">
                     <div className="text-center">
-                      {renderIllustration("quantum_battle_ready")}
+                      {renderIllustration("quantum_battle_ready", currentPageData?.aiGeneratedSVG)}
                       <h3 className="text-xl font-bold text-amber-900 mb-4 mt-4">Ready to Apply Your Knowledge?</h3>
                       <p className="text-sm text-amber-700 mb-6">You've mastered {level.concept}. Now put it into practice!</p>
                       <Button
