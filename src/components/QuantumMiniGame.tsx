@@ -4,14 +4,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Star, CheckCircle, XCircle, Lightbulb, Zap, Eye, MousePointer, Target } from 'lucide-react';
+import { ArrowLeft, Star, CheckCircle, XCircle, Lightbulb, Zap, Eye, MousePointer, Target, Loader2, AlertCircle } from 'lucide-react';
 import { type QuantumLevel } from '@/data/quantumLevels';
 import { useToast } from '@/hooks/use-toast';
+import { generateQuizQuestions } from '@/utils/theoryContent';
 
 interface QuantumMiniGameProps {
   level: QuantumLevel;
   onComplete: (stars: number) => void;
   onBack: () => void;
+}
+
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  correct: number;
+  explanation: string;
 }
 
 export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onComplete, onBack }) => {
@@ -21,152 +29,103 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
   const [showExplanation, setShowExplanation] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
-  const [draggedItems, setDraggedItems] = useState<string[]>([]);
-  const [clickedElements, setClickedElements] = useState<string[]>([]);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [retryAttempts, setRetryAttempts] = useState(0);
   const { toast } = useToast();
 
-  // Generate concept-specific questions based on level
-  const generateConceptQuestions = (level: QuantumLevel) => {
-    const conceptQuestions: { [key: string]: any[] } = {
-      "Classical vs Quantum": [
-        {
-          type: 'quiz',
-          question: `What is the key difference between classical and quantum bits?`,
-          options: ["Classical bits can be 0 or 1, quantum bits can be both", "No difference", "Classical is faster", "Quantum uses more memory"],
-          correct: "Classical bits can be 0 or 1, quantum bits can be both",
-          explanation: "Classical bits are deterministic (0 or 1), while qubits can exist in superposition of both states simultaneously."
-        },
-        {
-          type: 'simulation',
-          question: "Click on the elements that represent quantum properties:",
-          elements: ["Superposition", "Deterministic", "Entanglement", "Binary States", "Probability", "Certainty"],
-          correct: ["Superposition", "Entanglement", "Probability"],
-          explanation: "Quantum systems exhibit superposition, entanglement, and probabilistic behavior."
-        }
-      ],
-      "Quantum Basics": [
-        {
-          type: 'quiz',
-          question: `What allows quantum particles to exist in multiple states?`,
-          options: ["Superposition", "Classical physics", "Magnetism", "Electricity"],
-          correct: "Superposition",
-          explanation: "Superposition is the quantum principle that allows particles to exist in multiple states simultaneously."
-        },
-        {
-          type: 'drag-drop',
-          question: "Arrange these quantum concepts from basic to advanced:",
-          items: ["Quantum States", "Superposition", "Entanglement", "Quantum Computing"],
-          correct: ["Quantum States", "Superposition", "Entanglement", "Quantum Computing"],
-          explanation: "The progression goes from understanding basic quantum states to complex quantum computing applications."
-        }
-      ],
-      "Wave-Particle Duality": [
-        {
-          type: 'quiz',
-          question: `In the double-slit experiment, what happens when we don't observe the particle?`,
-          options: ["Creates interference pattern", "Goes through one slit", "Disappears", "Splits in half"],
-          correct: "Creates interference pattern",
-          explanation: "Without observation, particles behave as waves and create interference patterns through both slits."
-        },
-        {
-          type: 'simulation',
-          question: "Click on the wave-like behaviors of light:",
-          elements: ["Interference", "Particle Collision", "Diffraction", "Point Impact", "Wave Propagation", "Discrete Packets"],
-          correct: ["Interference", "Diffraction", "Wave Propagation"],
-          explanation: "Light shows wave-like behavior through interference, diffraction, and wave propagation."
-        }
-      ],
-      "Quantum Bit Basics": [
-        {
-          type: 'quiz',
-          question: `What is a qubit?`,
-          options: ["Quantum bit - basic unit of quantum information", "Classical bit", "Computer memory", "Data storage"],
-          correct: "Quantum bit - basic unit of quantum information",
-          explanation: "A qubit is the fundamental unit of quantum information, capable of existing in superposition."
-        },
-        {
-          type: 'visualization',
-          question: "Identify which states a qubit can exist in:",
-          elements: ["|0⟩", "|1⟩", "Both |0⟩ and |1⟩", "Neither", "Classical 0", "Classical 1"],
-          correct: ["|0⟩", "|1⟩", "Both |0⟩ and |1⟩"],
-          explanation: "Qubits can exist in states |0⟩, |1⟩, or superposition of both simultaneously."
-        }
-      ],
-      "Creating Superposition": [
-        {
-          type: 'quiz',
-          question: `Which gate creates equal superposition from a |0⟩ state?`,
-          options: ["Hadamard Gate", "X Gate", "Y Gate", "Z Gate"],
-          correct: "Hadamard Gate",
-          explanation: "The Hadamard gate transforms |0⟩ into (|0⟩ + |1⟩)/√2, creating equal superposition."
-        },
-        {
-          type: 'simulation',
-          question: "Apply the correct gate to create superposition:",
-          elements: ["H", "X", "Y", "Z", "CNOT"],
-          target: "Create |+⟩ from |0⟩",
-          correct: ["H"],
-          explanation: "The Hadamard (H) gate creates the |+⟩ superposition state from |0⟩."
-        }
-      ]
-    };
-
-    return conceptQuestions[level.concept] || [
-      {
-        type: 'quiz',
-        question: `What is the main focus of ${level.concept}?`,
-        options: [level.learningObjectives[0] || "Understanding the concept", "Classical computing", "Basic mathematics", "General physics"],
-        correct: level.learningObjectives[0] || "Understanding the concept",
-        explanation: `${level.concept} focuses on ${level.description.toLowerCase()}.`
+  // Function to render text with bold formatting
+  const renderFormattedText = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        const boldText = part.slice(2, -2);
+        return <strong key={index} className="font-bold">{boldText}</strong>;
       }
-    ];
+      return part;
+    });
   };
 
-  const questions = generateConceptQuestions(level);
+  // Load AI-generated questions when component mounts
+  useEffect(() => {
+    const loadQuestions = async () => {
+      console.log(`Loading AI-generated mini-game questions for Level ${level.id}: ${level.concept}`);
+      setIsLoadingQuestions(true);
+      setHasError(false);
+      
+      try {
+        // Get the theory content from localStorage if available
+        const theoryContent = localStorage.getItem(`theory_content_level_${level.id}`);
+        console.log('Theory content found for mini-game generation:', theoryContent ? 'Yes' : 'No');
+        
+        const generatedQuestions = await generateQuizQuestions(level, theoryContent || undefined);
+        console.log('Mini-game questions generated successfully for level', level.id);
+        
+        if (generatedQuestions && generatedQuestions.length > 0) {
+          setQuestions(generatedQuestions);
+        } else {
+          throw new Error('No valid questions generated');
+        }
+      } catch (error) {
+        console.error('Failed to generate mini-game questions for level', level.id, ':', error);
+        setHasError(true);
+        setQuestions([]);
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    };
+
+    loadQuestions();
+  }, [level]);
+
+  const handleRetryQuestions = async () => {
+    if (retryAttempts >= 2) {
+      console.log('Maximum retry attempts reached for mini-game generation');
+      return;
+    }
+
+    setRetryAttempts(prev => prev + 1);
+    setIsLoadingQuestions(true);
+    setHasError(false);
+
+    try {
+      const theoryContent = localStorage.getItem(`theory_content_level_${level.id}`);
+      const generatedQuestions = await generateQuizQuestions(level, theoryContent || undefined);
+      
+      if (generatedQuestions && generatedQuestions.length > 0) {
+        setQuestions(generatedQuestions);
+        setHasError(false);
+      } else {
+        throw new Error('No valid questions generated on retry');
+      }
+    } catch (error) {
+      console.error(`Mini-game retry ${retryAttempts + 1} failed:`, error);
+      setHasError(true);
+      setQuestions([]);
+    } finally {
+      setIsLoadingQuestions(false);
+    }
+  };
 
   useEffect(() => {
-    if (timeLeft > 0 && !gameComplete) {
+    if (timeLeft > 0 && !gameComplete && !isLoadingQuestions && questions.length > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && !gameComplete) {
       handleGameComplete();
     }
-  }, [timeLeft, gameComplete]);
+  }, [timeLeft, gameComplete, isLoadingQuestions, questions.length]);
 
   const handleAnswerSelect = (answer: string) => {
     setSelectedAnswer(answer);
   };
 
-  const handleElementClick = (element: string) => {
-    if (questions[currentQuestion].type === 'simulation' || questions[currentQuestion].type === 'visualization') {
-      setClickedElements(prev => 
-        prev.includes(element) 
-          ? prev.filter(item => item !== element)
-          : [...prev, element]
-      );
-    }
-  };
-
-  const handleDragDrop = (items: string[]) => {
-    setDraggedItems(items);
-  };
-
   const handleSubmitAnswer = () => {
-    const currentQ = questions[currentQuestion];
-    let isCorrect = false;
-
-    switch (currentQ.type) {
-      case 'quiz':
-        isCorrect = selectedAnswer === currentQ.correct;
-        break;
-      case 'simulation':
-      case 'visualization':
-        isCorrect = JSON.stringify(clickedElements.sort()) === JSON.stringify(currentQ.correct.sort());
-        break;
-      case 'drag-drop':
-        isCorrect = JSON.stringify(draggedItems) === JSON.stringify(currentQ.correct);
-        break;
-    }
+    if (!questions[currentQuestion]) return;
+    
+    const correctAnswer = questions[currentQuestion].options[questions[currentQuestion].correct];
+    const isCorrect = selectedAnswer === correctAnswer;
     
     if (isCorrect) {
       setScore(score + 100);
@@ -189,8 +148,6 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedAnswer(null);
-      setClickedElements([]);
-      setDraggedItems([]);
       setShowExplanation(false);
     } else {
       handleGameComplete();
@@ -207,123 +164,64 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
     }, 2000);
   };
 
-  const renderGameContent = () => {
-    const currentQ = questions[currentQuestion];
-    
-    switch (currentQ.type) {
-      case 'quiz':
-        return (
-          <div className="grid grid-cols-1 gap-3 mb-6">
-            {currentQ.options.map((option: string, index: number) => (
-              <Button
-                key={index}
-                variant={selectedAnswer === option ? "default" : "outline"}
-                className={`text-left justify-start h-auto p-4 ${
-                  selectedAnswer === option 
-                    ? 'bg-purple-600 border-purple-400 text-white' 
-                    : 'bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50'
-                }`}
-                onClick={() => handleAnswerSelect(option)}
-                disabled={showExplanation}
-              >
-                <span className="font-semibold mr-3">
-                  {String.fromCharCode(65 + index)}.
-                </span>
-                {option}
-              </Button>
-            ))}
+  // Show loading state while questions are being generated
+  if (isLoadingQuestions) {
+    return (
+      <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">Generating AI Mini-Game</h3>
+              <p className="text-gray-300">Creating interactive challenges for {level.concept}...</p>
+              <p className="text-gray-400 text-sm mt-2">Questions will test your understanding</p>
+              {retryAttempts > 0 && (
+                <p className="text-yellow-400 text-sm mt-1">Retry attempt {retryAttempts} of 2</p>
+              )}
+            </div>
           </div>
-        );
+        </CardContent>
+      </Card>
+    );
+  }
 
-      case 'simulation':
-      case 'visualization':
-        return (
-          <div className="mb-6">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {currentQ.elements.map((element: string, index: number) => (
-                <Button
-                  key={index}
-                  variant={clickedElements.includes(element) ? "default" : "outline"}
-                  className={`p-4 ${
-                    clickedElements.includes(element)
-                      ? 'bg-purple-600 border-purple-400 text-white'
-                      : 'bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50'
-                  }`}
-                  onClick={() => handleElementClick(element)}
-                  disabled={showExplanation}
+  // Show error state if questions failed to load
+  if (hasError || questions.length === 0) {
+    return (
+      <Card className="bg-black/20 backdrop-blur-lg border-red-500/20">
+        <CardContent className="p-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">Failed to Generate Mini-Game</h3>
+              <p className="text-gray-300">Unable to create challenges for {level.concept}</p>
+              <p className="text-gray-400 text-sm mt-2">Please check your internet connection and try again</p>
+              <div className="flex gap-3 mt-4 justify-center">
+                {retryAttempts < 2 && (
+                  <Button 
+                    onClick={handleRetryQuestions}
+                    className="bg-purple-600 hover:bg-purple-700"
+                    disabled={isLoadingQuestions}
+                  >
+                    {isLoadingQuestions ? 'Retrying...' : 'Retry Generation'}
+                  </Button>
+                )}
+                <Button 
+                  onClick={onBack} 
+                  variant="outline"
+                  className="border-gray-500 text-gray-300 hover:bg-gray-700"
                 >
-                  {currentQ.type === 'simulation' ? <Eye className="h-4 w-4 mr-2" /> : <Target className="h-4 w-4 mr-2" />}
-                  {element}
+                  Go Back
                 </Button>
-              ))}
+              </div>
             </div>
           </div>
-        );
+        </CardContent>
+      </Card>
+    );
+  }
 
-      case 'drag-drop':
-        return (
-          <div className="mb-6">
-            <div className="space-y-3">
-              {currentQ.items.map((item: string, index: number) => (
-                <div
-                  key={index}
-                  className={`p-3 rounded border cursor-move ${
-                    draggedItems.includes(item)
-                      ? 'bg-purple-600/20 border-purple-400'
-                      : 'bg-gray-800/50 border-gray-600'
-                  }`}
-                  onClick={() => {
-                    if (!showExplanation) {
-                      const newOrder = draggedItems.includes(item)
-                        ? draggedItems.filter(i => i !== item)
-                        : [...draggedItems, item];
-                      handleDragDrop(newOrder);
-                    }
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <MousePointer className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-300">{item}</span>
-                    {draggedItems.includes(item) && (
-                      <Badge className="ml-auto">{draggedItems.indexOf(item) + 1}</Badge>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const canSubmit = () => {
-    const currentQ = questions[currentQuestion];
-    switch (currentQ.type) {
-      case 'quiz':
-        return selectedAnswer !== null;
-      case 'simulation':
-      case 'visualization':
-        return clickedElements.length > 0;
-      case 'drag-drop':
-        return draggedItems.length === currentQ.items.length;
-      default:
-        return false;
-    }
-  };
-
-  const getGameTypeIcon = (type: string) => {
-    switch (type) {
-      case 'simulation': return <Eye className="h-4 w-4" />;
-      case 'visualization': return <Target className="h-4 w-4" />;
-      case 'drag-drop': return <MousePointer className="h-4 w-4" />;
-      default: return <Lightbulb className="h-4 w-4" />;
-    }
-  };
-
-  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
   if (gameComplete) {
     const finalScore = score + Math.max(0, timeLeft * 2);
@@ -374,6 +272,18 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
     );
   }
 
+  const currentQuestionData = questions[currentQuestion];
+
+  if (!currentQuestionData) {
+    return (
+      <Card className="bg-black/20 backdrop-blur-lg border-red-500/20">
+        <CardContent className="p-8 text-center">
+          <p className="text-red-400">Failed to load questions. Please try again.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -384,8 +294,8 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
         </Button>
         <div className="flex items-center gap-2">
           <Badge className="bg-blue-600/20 text-blue-300 flex items-center gap-1">
-            {getGameTypeIcon(questions[currentQuestion]?.type)}
-            {questions[currentQuestion]?.type?.charAt(0).toUpperCase() + questions[currentQuestion]?.type?.slice(1)} Challenge
+            <Lightbulb className="h-4 w-4" />
+            AI Challenge
           </Badge>
         </div>
       </div>
@@ -416,85 +326,60 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
       <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
         <CardHeader>
           <div className="flex items-center gap-2 mb-2">
-            {getGameTypeIcon(questions[currentQuestion]?.type)}
+            <Lightbulb className="h-5 w-5 text-yellow-400" />
             <Badge className="bg-purple-600/20 text-purple-300">
               {level.concept}
             </Badge>
+            <Badge className="bg-blue-600/20 text-blue-300 text-xs">
+              AI Generated
+            </Badge>
           </div>
           <CardTitle className="text-xl text-white">
-            {questions[currentQuestion]?.question}
+            {renderFormattedText(currentQuestionData.question)}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {renderGameContent()}
+          <div className="grid grid-cols-1 gap-3 mb-6">
+            {currentQuestionData.options.map((option, index) => (
+              <Button
+                key={index}
+                variant={selectedAnswer === option ? "default" : "outline"}
+                className={`text-left justify-start h-auto p-4 ${
+                  selectedAnswer === option 
+                    ? 'bg-purple-600 border-purple-400 text-white' 
+                    : 'bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50'
+                }`}
+                onClick={() => handleAnswerSelect(option)}
+                disabled={showExplanation}
+              >
+                <span className="font-semibold mr-3">
+                  {String.fromCharCode(65 + index)}.
+                </span>
+                <span>{renderFormattedText(option)}</span>
+              </Button>
+            ))}
+          </div>
 
           {/* Explanation */}
           {showExplanation && (
             <Card className={`mb-4 ${
-              // Check if answer is correct based on game type
-              (() => {
-                const currentQ = questions[currentQuestion];
-                let isCorrect = false;
-                switch (currentQ.type) {
-                  case 'quiz':
-                    isCorrect = selectedAnswer === currentQ.correct;
-                    break;
-                  case 'simulation':
-                  case 'visualization':
-                    isCorrect = JSON.stringify(clickedElements.sort()) === JSON.stringify(currentQ.correct.sort());
-                    break;
-                  case 'drag-drop':
-                    isCorrect = JSON.stringify(draggedItems) === JSON.stringify(currentQ.correct);
-                    break;
-                }
-                return isCorrect ? 'bg-green-900/20 border-green-500/30' : 'bg-red-900/20 border-red-500/30';
-              })()
+              selectedAnswer === currentQuestionData.options[currentQuestionData.correct]
+                ? 'bg-green-900/20 border-green-500/30'
+                : 'bg-red-900/20 border-red-500/30'
             }`}>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  {(() => {
-                    const currentQ = questions[currentQuestion];
-                    let isCorrect = false;
-                    switch (currentQ.type) {
-                      case 'quiz':
-                        isCorrect = selectedAnswer === currentQ.correct;
-                        break;
-                      case 'simulation':
-                      case 'visualization':
-                        isCorrect = JSON.stringify(clickedElements.sort()) === JSON.stringify(currentQ.correct.sort());
-                        break;
-                      case 'drag-drop':
-                        isCorrect = JSON.stringify(draggedItems) === JSON.stringify(currentQ.correct);
-                        break;
-                    }
-                    return isCorrect ? (
-                      <CheckCircle className="h-5 w-5 text-green-400 mt-0.5" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-red-400 mt-0.5" />
-                    );
-                  })()}
+                  {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? (
+                    <CheckCircle className="h-5 w-5 text-green-400 mt-0.5" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-red-400 mt-0.5" />
+                  )}
                   <div>
                     <p className="font-semibold text-white mb-2">
-                      {(() => {
-                        const currentQ = questions[currentQuestion];
-                        let isCorrect = false;
-                        switch (currentQ.type) {
-                          case 'quiz':
-                            isCorrect = selectedAnswer === currentQ.correct;
-                            break;
-                          case 'simulation':
-                          case 'visualization':
-                            isCorrect = JSON.stringify(clickedElements.sort()) === JSON.stringify(currentQ.correct.sort());
-                            break;
-                          case 'drag-drop':
-                            isCorrect = JSON.stringify(draggedItems) === JSON.stringify(currentQ.correct);
-                            break;
-                        }
-                        return isCorrect ? 'Correct!' : 'Incorrect';
-                      })()}
+                      {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? 'Correct!' : 'Incorrect'}
                     </p>
                     <p className="text-gray-300 text-sm">
-                      {questions[currentQuestion]?.explanation}
+                      {renderFormattedText(currentQuestionData.explanation)}
                     </p>
                   </div>
                 </div>
@@ -507,7 +392,7 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
             {!showExplanation ? (
               <Button
                 onClick={handleSubmitAnswer}
-                disabled={!canSubmit()}
+                disabled={!selectedAnswer}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
                 <Zap className="h-4 w-4 mr-2" />

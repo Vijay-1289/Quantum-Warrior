@@ -31,6 +31,18 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [generatedTheoryContent, setGeneratedTheoryContent] = useState<string>('');
   const [retryCount, setRetryCount] = useState(0);
 
+  // Function to render text with bold formatting
+  const renderFormattedText = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        const boldText = part.slice(2, -2);
+        return <strong key={index} className="font-bold text-amber-900">{boldText}</strong>;
+      }
+      return part;
+    });
+  };
+
   // Generate initial story pages with unique content for each level
   const generateInitialPages = (level: QuantumLevel): StoryPage[] => {
     console.log(`Creating story pages for Level ${level.id}: ${level.title} - Concept: ${level.concept}`);
@@ -348,7 +360,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                       }`}>
                         {currentPageData?.content.split('\n\n').map((paragraph, idx) => (
                           <p key={idx} className="text-justify">
-                            {paragraph}
+                            {renderFormattedText(paragraph)}
                           </p>
                         ))}
                       </div>

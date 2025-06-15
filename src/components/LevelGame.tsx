@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +42,18 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
   const [hasError, setHasError] = useState(false);
   const [retryAttempts, setRetryAttempts] = useState(0);
   const { toast } = useToast();
+
+  // Function to render text with bold formatting
+  const renderFormattedText = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        const boldText = part.slice(2, -2);
+        return <strong key={index} className="font-bold">{boldText}</strong>;
+      }
+      return part;
+    });
+  };
 
   // Load AI-generated questions when component mounts
   useEffect(() => {
@@ -272,7 +285,7 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
             </Badge>
           </div>
           <CardTitle className="text-xl text-white">
-            {currentQuestionData.question}
+            {renderFormattedText(currentQuestionData.question)}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -292,7 +305,7 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
                 <span className="font-semibold mr-3">
                   {String.fromCharCode(65 + index)}.
                 </span>
-                {option}
+                <span>{renderFormattedText(option)}</span>
               </Button>
             ))}
           </div>
@@ -316,7 +329,7 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
                       {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? 'Correct!' : 'Incorrect'}
                     </p>
                     <p className="text-gray-300 text-sm">
-                      {currentQuestionData.explanation}
+                      {renderFormattedText(currentQuestionData.explanation)}
                     </p>
                   </div>
                 </div>
