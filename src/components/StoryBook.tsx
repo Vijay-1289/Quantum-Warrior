@@ -400,11 +400,10 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                     )}
                   </div>
                 ) : (
-                  // Final Page
+                  // Final Page - Text content only, no SVG on right side
                   <div className="flex flex-col items-center justify-center h-full">
                     <div className="text-center">
-                      {renderIllustration("quantum_battle_ready", currentPageData?.aiGeneratedSVG)}
-                      <h3 className="text-xl font-bold text-amber-900 mb-4 mt-4">Ready to Apply Your Knowledge?</h3>
+                      <h3 className="text-xl font-bold text-amber-900 mb-4">Ready to Apply Your Knowledge?</h3>
                       <p className="text-sm text-amber-700 mb-6">You've mastered {level.concept}. Now put it into practice!</p>
                       <Button
                         onClick={handleStartChallenge}
