@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,8 +51,8 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
   };
 
   const getLevelStars = (levelId: number): number => {
-    // This would be stored in player progress in a real implementation
-    return isLevelCompleted(levelId) ? Math.floor(Math.random() * 3) + 1 : 0;
+    // Get stars from the levelStars record, default to 0 if not found
+    return (playerProgress as any).levelStars?.[levelId] || 0;
   };
 
   const getChapterProgress = (chapter: Chapter): number => {

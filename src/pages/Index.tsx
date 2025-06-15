@@ -9,7 +9,8 @@ const Index = () => {
   const [playerProgress, setPlayerProgress] = useState({
     completedLevels: [] as number[],
     currentLevel: 1,
-    totalStars: 0
+    totalStars: 0,
+    levelStars: {} as Record<number, number>
   });
   const navigate = useNavigate();
 
@@ -17,7 +18,12 @@ const Index = () => {
     // Load player progress from localStorage
     const savedProgress = localStorage.getItem('quantumStoryProgress');
     if (savedProgress) {
-      setPlayerProgress(JSON.parse(savedProgress));
+      const parsed = JSON.parse(savedProgress);
+      // Ensure levelStars exists for backward compatibility
+      if (!parsed.levelStars) {
+        parsed.levelStars = {};
+      }
+      setPlayerProgress(parsed);
     }
   }, []);
 
