@@ -20,7 +20,6 @@ export const LevelDetail: React.FC<LevelDetailProps> = ({ level, isCompleted, st
       <StoryBook
         level={level}
         onComplete={() => setCurrentView('game')}
-        onBack={() => setCurrentView('intro')}
       />
     );
   }

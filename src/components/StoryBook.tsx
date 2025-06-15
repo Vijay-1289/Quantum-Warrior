@@ -1,49 +1,35 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Book, ChevronLeft, ChevronRight, Sparkles, Users, MessageSquare, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, BookOpen, Loader2, AlertCircle } from 'lucide-react';
 import { type QuantumLevel } from '@/data/quantumLevels';
-import { useToast } from '@/hooks/use-toast';
-import { generateStoryContent, generateTheoryContent } from '@/utils/theoryContent';
-import { ComicStoryGenerator } from './ComicStoryGenerator';
+import { getIllustrationComponent } from '@/components/SVGIllustrations';
+import { generateTheoryContent } from '@/utils/theoryContent';
+
+interface StoryPage {
+  id: number;
+  title: string;
+  content: string;
+  illustration: string;
+  concept: string;
+  isTheoryPage?: boolean;
+  isLoading?: boolean;
+  hasError?: boolean;
+}
 
 interface StoryBookProps {
   level: QuantumLevel;
   onComplete: () => void;
-  onBack: () => void;
 }
 
-interface ComicCharacter {
-  name: string;
-  role: string;
-  personality: string;
-  appearance: string;
-  imageUrl?: string;
-}
-
-interface ComicPanel {
-  characters: string[];
-  dialogue: string;
-  speaker: string;
-  setting: string;
-  imagePrompt: string;
-  imageUrl?: string;
-}
-
-export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete, onBack }) => {
+export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [currentPage, setCurrentPage] = useState(0);
-  const [storyPages, setStoryPages] = useState<string[]>([]);
-  const [isLoadingStory, setIsLoadingStory] = useState(true);
-  const [isGeneratingComic, setIsGeneratingComic] = useState(false);
-  const [comicCharacters, setComicCharacters] = useState<ComicCharacter[]>([]);
-  const [comicPanels, setComicPanels] = useState<ComicPanel[]>([]);
-  const [hasError, setHasError] = useState(false);
-  const [retryAttempts, setRetryAttempts] = useState(0);
-  const [viewMode, setViewMode] = useState<'story' | 'comic'>('story');
-  const { toast } = useToast();
+  const [isFlipping, setIsFlipping] = useState(false);
+  const [bookOpened, setBookOpened] = useState(false);
+  const [storyPages, setStoryPages] = useState<StoryPage[]>([]);
+  const [isGeneratingContent, setIsGeneratingContent] = useState(true);
+  const [generatedTheoryContent, setGeneratedTheoryContent] = useState<string>('');
+  const [retryCount, setRetryCount] = useState(0);
 
   // Function to render text with bold formatting
   const renderFormattedText = (text: string) => {
@@ -51,405 +37,448 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete, onBack 
     return parts.map((part, index) => {
       if (part.startsWith('**') && part.endsWith('**')) {
         const boldText = part.slice(2, -2);
-        return <strong key={index} className="font-bold">{boldText}</strong>;
+        return <strong key={index} className="font-bold text-amber-900">{boldText}</strong>;
       }
       return part;
     });
   };
 
-  // Load AI-generated story when component mounts
+  // Generate initial story pages with unique content for each level
+  const generateInitialPages = (level: QuantumLevel): StoryPage[] => {
+    console.log(`Creating story pages for Level ${level.id}: ${level.title} - Concept: ${level.concept}`);
+    
+    return [
+      {
+        id: 1,
+        title: "The Quantum Adventure Begins",
+        content: `Welcome, brave Quantum Warrior, to Level ${level.id}: ${level.title}!\n\nIn this chapter of your epic journey through the quantum realm, you will master the profound mysteries of ${level.concept}. The ancient quantum masters have left knowledge that will be essential for defeating the Quantum Villain.\n\nThis level focuses specifically on "${level.concept}" - a ${level.difficulty} level concept that will challenge your understanding of quantum reality!\n\nPrepare yourself, for the concepts ahead will unlock new dimensions of quantum knowledge!`,
+        illustration: "quantum_warrior_intro",
+        concept: "Introduction"
+      },
+      {
+        id: 2,
+        title: `The Tale of ${level.concept}`,
+        content: `${level.storyText}\n\nAs you can see, ${level.concept} plays a crucial role in this quantum realm. The story you just experienced directly relates to the theoretical foundations you're about to learn.\n\nNext, you'll dive deep into the scientific principles behind ${level.concept}, gaining the knowledge needed to master this level's challenges.`,
+        illustration: getAdvancedIllustrationKey(level.concept),
+        concept: level.concept
+      },
+      {
+        id: 3,
+        title: `Deep Dive: ${level.concept}`,
+        content: '',
+        illustration: getAdvancedIllustrationKey(level.concept),
+        concept: "Detailed Theory",
+        isTheoryPage: true,
+        isLoading: true,
+        hasError: false
+      },
+      {
+        id: 4,
+        title: "Ready for the Quantum Challenge",
+        content: `Outstanding! You have now mastered the theoretical foundations of ${level.concept}. Your mind has been expanded with quantum knowledge that few possess.\n\nYou are now ready to face the Quantum Villain in the ${level.gameType} challenge. Remember: Every aspect of your upcoming battle directly relates to ${level.concept} - the very concept you've just studied.\n\nTrust in your quantum wisdom and apply the principles of ${level.concept} to emerge victorious!`,
+        illustration: "quantum_battle_ready",
+        concept: "Final Preparation"
+      }
+    ];
+  };
+
+  // Initialize story pages and generate AI content immediately when component mounts
   useEffect(() => {
-    const loadStory = async () => {
-      console.log(`Loading AI-generated story for Level ${level.id}: ${level.concept}`);
-      setIsLoadingStory(true);
-      setHasError(false);
+    console.log(`StoryBook mounted for Level ${level.id}: ${level.title} - Concept: ${level.concept}`);
+    
+    const initialPages = generateInitialPages(level);
+    setStoryPages(initialPages);
+    setIsGeneratingContent(true);
+    setRetryCount(0);
+    
+    // Generate theory content immediately for this specific level
+    const loadTheoryContent = async () => {
+      console.log(`Starting AI content generation for Level ${level.id} - Concept: ${level.concept}`);
       
       try {
-        const generatedStory = await generateStoryContent(level);
-        console.log('Story generated successfully for level', level.id);
+        // Get the story content from page 2 to pass as reference
+        const storyContent = `${level.storyText}\n\nAs you can see, ${level.concept} plays a crucial role in this quantum realm. The story you just experienced directly relates to the theoretical foundations you're about to learn.`;
         
-        if (generatedStory && generatedStory.length > 0) {
-          setStoryPages(generatedStory);
-        } else {
-          throw new Error('No valid story generated');
-        }
+        const content = await generateTheoryContent(level, storyContent);
+        console.log(`AI theory content successfully generated for Level ${level.id} - ${level.concept}:`, content.substring(0, 100) + '...');
+        
+        // Store the generated theory content for quiz generation
+        setGeneratedTheoryContent(content);
+        
+        setStoryPages(prevPages => 
+          prevPages.map(page => 
+            page.isTheoryPage 
+              ? { 
+                  ...page, 
+                  content, 
+                  isLoading: false,
+                  hasError: false,
+                  title: `Deep Dive: ${level.concept}` 
+                }
+              : page
+          )
+        );
+        setIsGeneratingContent(false);
       } catch (error) {
-        console.error('Failed to generate story for level', level.id, ':', error);
-        setHasError(true);
-        setStoryPages([]);
-      } finally {
-        setIsLoadingStory(false);
+        console.error(`Failed to generate AI content for Level ${level.id} - ${level.concept}:`, error);
+        
+        setStoryPages(prevPages => 
+          prevPages.map(page => 
+            page.isTheoryPage 
+              ? { 
+                  ...page, 
+                  content: `Failed to generate AI content for "${level.concept}". This may be due to network issues or API limits. Please wait a moment and try refreshing the page.`,
+                  isLoading: false,
+                  hasError: true
+                }
+              : page
+          )
+        );
+        setIsGeneratingContent(false);
       }
     };
 
-    loadStory();
-  }, [level]);
+    loadTheoryContent();
+    setTimeout(() => setBookOpened(true), 500);
+  }, [level.id, level.concept, level.title]);
 
-  const handleRetryStory = async () => {
-    if (retryAttempts >= 2) {
-      console.log('Maximum retry attempts reached for story generation');
+  const handleRetryGeneration = async () => {
+    if (retryCount >= 3) {
+      console.log('Maximum retry attempts reached');
       return;
     }
 
-    setRetryAttempts(prev => prev + 1);
-    setIsLoadingStory(true);
-    setHasError(false);
-
-    try {
-      const generatedStory = await generateStoryContent(level);
-      
-      if (generatedStory && generatedStory.length > 0) {
-        setStoryPages(generatedStory);
-        setHasError(false);
-      } else {
-        throw new Error('No valid story generated on retry');
-      }
-    } catch (error) {
-      console.error(`Story retry ${retryAttempts + 1} failed:`, error);
-      setHasError(true);
-      setStoryPages([]);
-    } finally {
-      setIsLoadingStory(false);
-    }
-  };
-
-  const handleComicComplete = (comicData: { characters: ComicCharacter[], panels: ComicPanel[] }) => {
-    setComicCharacters(comicData.characters);
-    setComicPanels(comicData.panels);
-    setIsGeneratingComic(false);
-    setViewMode('comic');
-  };
-
-  const generateTheoryFromStory = async () => {
-    if (storyPages.length === 0) return;
-
-    const fullStoryContent = storyPages.join(' ');
+    setRetryCount(prev => prev + 1);
+    setIsGeneratingContent(true);
     
+    setStoryPages(prevPages => 
+      prevPages.map(page => 
+        page.isTheoryPage 
+          ? { 
+              ...page, 
+              isLoading: true,
+              hasError: false
+            }
+          : page
+      )
+    );
+
     try {
-      console.log('Generating theory content from story for level', level.id);
-      const theoryContent = await generateTheoryContent(level, fullStoryContent);
+      const storyContent = `${level.storyText}\n\nAs you can see, ${level.concept} plays a crucial role in this quantum realm. The story you just experienced directly relates to the theoretical foundations you're about to learn.`;
       
-      if (theoryContent) {
-        // Store the theory content for use in quiz generation
-        localStorage.setItem(`theory_content_level_${level.id}`, theoryContent);
-        console.log('Theory content stored for level', level.id);
-      }
+      const content = await generateTheoryContent(level, storyContent);
+      setGeneratedTheoryContent(content);
+      
+      setStoryPages(prevPages => 
+        prevPages.map(page => 
+          page.isTheoryPage 
+            ? { 
+                ...page, 
+                content, 
+                isLoading: false,
+                hasError: false,
+                title: `Deep Dive: ${level.concept}` 
+              }
+            : page
+        )
+      );
+      setIsGeneratingContent(false);
     } catch (error) {
-      console.error('Failed to generate theory from story:', error);
+      console.error(`Retry failed for Level ${level.id}:`, error);
+      setStoryPages(prevPages => 
+        prevPages.map(page => 
+          page.isTheoryPage 
+            ? { 
+                ...page, 
+                content: `Failed to generate AI content after ${retryCount + 1} attempts. Please check your internet connection and try again later.`,
+                isLoading: false,
+                hasError: true
+              }
+            : page
+        )
+      );
+      setIsGeneratingContent(false);
     }
   };
 
-  const handleFinishStory = async () => {
-    await generateTheoryFromStory();
-    onComplete();
-  };
-
-  const startComicGeneration = () => {
-    if (storyPages.length > 0) {
-      setIsGeneratingComic(true);
+  const handleNextPage = () => {
+    if (currentPage < storyPages.length - 1 && !isFlipping) {
+      setIsFlipping(true);
+      setTimeout(() => {
+        setCurrentPage(currentPage + 1);
+        setIsFlipping(false);
+      }, 300);
     }
   };
 
-  // Show loading state while story is being generated
-  if (isLoadingStory) {
+  const handlePrevPage = () => {
+    if (currentPage > 0 && !isFlipping) {
+      setIsFlipping(true);
+      setTimeout(() => {
+        setCurrentPage(currentPage - 1);
+        setIsFlipping(false);
+      }, 300);
+    }
+  };
+
+  const handleStartChallenge = () => {
+    setBookOpened(false);
+    // Pass the generated theory content to the game component via localStorage
+    if (generatedTheoryContent) {
+      localStorage.setItem(`theory_content_level_${level.id}`, generatedTheoryContent);
+      console.log(`Stored theory content for Level ${level.id} quiz generation`);
+    }
+    setTimeout(onComplete, 800);
+  };
+
+  const renderIllustration = (illustrationKey: string | undefined) => {
+    if (!illustrationKey) return null;
+    const IllustrationComponent = getIllustrationComponent(illustrationKey);
+    return <IllustrationComponent />;
+  };
+
+  const currentPageData = storyPages[currentPage];
+
+  if (!currentPageData) {
     return (
-      <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
-        <CardContent className="p-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Crafting Your Story</h3>
-              <p className="text-gray-300">Creating an engaging narrative about {level.concept}...</p>
-              <p className="text-gray-400 text-sm mt-2">This story will guide your learning journey</p>
-              {retryAttempts > 0 && (
-                <p className="text-yellow-400 text-sm mt-1">Retry attempt {retryAttempts} of 2</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-white mx-auto mb-4" />
+          <p className="text-white">Loading Level {level.id} story...</p>
+        </div>
+      </div>
     );
   }
 
-  // Show error state if story failed to load
-  if (hasError || storyPages.length === 0) {
-    return (
-      <Card className="bg-black/20 backdrop-blur-lg border-red-500/20">
-        <CardContent className="p-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Story Generation Failed</h3>
-              <p className="text-gray-300">Unable to create story for {level.concept}</p>
-              <p className="text-gray-400 text-sm mt-2">Please check your internet connection and try again</p>
-              <div className="flex gap-3 mt-4 justify-center">
-                {retryAttempts < 2 && (
-                  <Button 
-                    onClick={handleRetryStory}
-                    className="bg-purple-600 hover:bg-purple-700"
-                    disabled={isLoadingStory}
-                  >
-                    {isLoadingStory ? 'Retrying...' : 'Retry Generation'}
-                  </Button>
-                )}
-                <Button 
-                  onClick={onBack}
-                  variant="outline"
-                  className="border-gray-500 text-gray-300 hover:bg-gray-700"
-                >
-                  Go Back
-                </Button>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
+      <div className="relative">
+        {/* Book Container */}
+        <div 
+          className={`relative transform transition-all duration-1000 ease-out ${
+            bookOpened ? 'scale-100 rotate-0' : 'scale-75 rotate-12'
+          }`}
+          style={{
+            perspective: '1000px',
+            transformStyle: 'preserve-3d'
+          }}
+        >
+          {/* Book Cover */}
+          <div 
+            className={`absolute inset-0 bg-gradient-to-br from-amber-700 to-amber-900 rounded-lg shadow-2xl transform transition-all duration-1000 ease-out ${
+              bookOpened ? 'rotateY-90' : 'rotateY-0'
+            }`}
+            style={{
+              width: '800px',
+              height: '600px',
+              transformOrigin: 'left center',
+              backfaceVisibility: 'hidden'
+            }}
+          >
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center text-white">
+                <BookOpen className="h-16 w-16 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold mb-2">Level {level.id}</h2>
+                <p className="text-lg">{level.title}</p>
+                <p className="text-sm text-amber-200 mt-2">{level.concept}</p>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
-  // Show comic generator
-  if (isGeneratingComic) {
-    return (
-      <ComicStoryGenerator
-        level={level}
-        storyContent={storyPages.join(' ')}
-        onComplete={handleComicComplete}
-      />
-    );
-  }
-
-  // Show comic view
-  if (viewMode === 'comic' && comicPanels.length > 0) {
-    const currentPanel = comicPanels[currentPage] || comicPanels[0];
-    const speaker = comicCharacters.find(char => char.name === currentPanel.speaker);
-
-    return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
-            <ChevronLeft className="h-4 w-4" />
-            Back to Level
-          </Button>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline"
-              onClick={() => setViewMode('story')}
-              className="flex items-center gap-2"
-            >
-              <Book className="h-4 w-4" />
-              Story Mode
-            </Button>
-            <Badge className="bg-blue-600/20 text-blue-300 flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              Comic Mode
-            </Badge>
-          </div>
-        </div>
-
-        {/* Comic Panel */}
-        <Card className="bg-gradient-to-br from-slate-900 to-purple-900 border border-purple-500/20">
-          <CardContent className="p-0">
-            {/* Comic Panel Display */}
-            <div className="min-h-[500px] bg-gradient-to-br from-slate-800 to-slate-900 rounded-t-lg relative overflow-hidden">
-              {/* Background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 via-blue-900/20 to-purple-900/20" />
-              
-              {/* Panel Image */}
-              {currentPanel.imageUrl && (
-                <div className="absolute inset-0">
-                  <img 
-                    src={currentPanel.imageUrl} 
-                    alt={`Comic panel ${currentPage + 1}`}
-                    className="w-full h-full object-cover opacity-50"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                </div>
-              )}
-              
-              {/* Character and Speech Bubble */}
-              <div className="relative z-10 flex items-end justify-center h-full p-8">
-                <div className="text-center max-w-4xl">
-                  {/* Character Display */}
-                  {speaker && (
-                    <div className="mb-6">
-                      {speaker.imageUrl && (
-                        <img 
-                          src={speaker.imageUrl} 
-                          alt={speaker.name}
-                          className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-purple-400/50"
-                        />
-                      )}
-                      <h3 className="text-2xl font-bold text-purple-300 mb-2">{speaker.name}</h3>
-                      <p className="text-sm text-gray-400">{speaker.role}</p>
-                    </div>
-                  )}
-                  
-                  {/* Speech Bubble */}
-                  <div className="relative bg-white/95 rounded-2xl p-6 border-4 border-purple-400/50 shadow-2xl">
-                    {/* Speech bubble tail */}
-                    <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-white/95 rotate-45 border-r-4 border-b-4 border-purple-400/50" />
-                    
-                    <p className="text-lg text-gray-800 leading-relaxed font-medium">
-                      {renderFormattedText(currentPanel.dialogue)}
-                    </p>
+          {/* Book Pages */}
+          <Card 
+            className={`relative bg-gradient-to-br from-amber-50 to-yellow-50 border-4 border-amber-800 shadow-2xl transform transition-all duration-1000 ease-out ${
+              bookOpened ? 'rotateY-0' : 'rotateY-90'
+            }`}
+            style={{
+              width: '800px',
+              height: '600px',
+              transformOrigin: 'left center',
+              backfaceVisibility: 'hidden'
+            }}
+          >
+            {/* Page Content */}
+            <div className="h-full flex">
+              {/* Left Page - Enhanced SVG Illustration */}
+              <div className="w-1/2 p-6 border-r-2 border-amber-200 relative overflow-hidden bg-gradient-to-br from-purple-50 to-blue-50">
+                <div 
+                  className={`transform transition-all duration-500 ease-out ${
+                    isFlipping ? 'scale-95 opacity-50 rotate-y-12' : 'scale-100 opacity-100 rotate-y-0'
+                  }`}
+                >
+                  <div className="h-full flex items-center justify-center">
+                    {renderIllustration(currentPageData?.illustration)}
                   </div>
                 </div>
               </div>
-              
-              {/* Comic panel border */}
-              <div className="absolute inset-4 border-4 border-white/20 rounded-lg pointer-events-none" />
-            </div>
 
-            {/* Panel Info */}
-            <div className="p-6 bg-gray-900/50">
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <p className="text-sm text-gray-400">Panel {currentPage + 1} of {comicPanels.length}</p>
-                  <p className="text-xs text-gray-500">Setting: {currentPanel.setting}</p>
-                </div>
-                <Badge className="bg-purple-600/20 text-purple-300">
-                  {level.concept}
-                </Badge>
-              </div>
-
-              {/* Navigation */}
-              <div className="flex justify-between items-center">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                  disabled={currentPage === 0}
-                  className="flex items-center gap-2"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-
-                <Progress 
-                  value={((currentPage + 1) / comicPanels.length) * 100} 
-                  className="flex-1 mx-4 h-2"
-                />
-
-                {currentPage < comicPanels.length - 1 ? (
-                  <Button
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 flex items-center gap-2"
+              {/* Right Page - Enhanced Content */}
+              <div className="w-1/2 p-6 relative overflow-hidden">
+                {currentPage < storyPages.length - 1 ? (
+                  <div 
+                    className={`transform transition-all duration-500 ease-out ${
+                      isFlipping ? 'scale-95 opacity-50 translate-x-4' : 'scale-100 opacity-100 translate-x-0'
+                    }`}
                   >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                    <h3 className="text-xl font-bold text-amber-900 mb-4 text-center border-b-2 border-amber-300 pb-2">
+                      {currentPageData?.title}
+                    </h3>
+                    
+                    {/* Loading state for theory page */}
+                    {currentPageData?.isLoading || (currentPageData?.isTheoryPage && isGeneratingContent) ? (
+                      <div className="flex items-center justify-center h-64">
+                        <div className="text-center">
+                          <Loader2 className="h-8 w-8 animate-spin text-amber-600 mx-auto mb-4" />
+                          <p className="text-amber-700 font-semibold">Generating AI content for</p>
+                          <p className="text-amber-800 text-lg font-bold">{level.concept}</p>
+                          <p className="text-amber-600 text-xs mt-2">Level {level.id} • This may take a moment</p>
+                          {retryCount > 0 && (
+                            <p className="text-amber-500 text-xs mt-1">Attempt {retryCount + 1} of 3</p>
+                          )}
+                        </div>
+                      </div>
+                    ) : currentPageData?.hasError ? (
+                      <div className="flex items-center justify-center h-64">
+                        <div className="text-center">
+                          <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
+                          <p className="text-red-700 font-semibold">Failed to generate AI content</p>
+                          <p className="text-red-600 text-sm mt-2">Please check your connection and try again</p>
+                          {retryCount < 3 && (
+                            <Button
+                              onClick={handleRetryGeneration}
+                              className="mt-4 bg-amber-600 hover:bg-amber-700 text-white text-sm px-4 py-2"
+                              disabled={isGeneratingContent}
+                            >
+                              {isGeneratingContent ? 'Retrying...' : 'Retry Generation'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`text-amber-800 leading-relaxed text-sm space-y-3 overflow-y-auto ${
+                        currentPageData?.isTheoryPage ? 'max-h-96' : 'max-h-80'
+                      }`}>
+                        {currentPageData?.content.split('\n\n').map((paragraph, idx) => (
+                          <p key={idx} className="text-justify">
+                            {renderFormattedText(paragraph)}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Theory Page Indicator */}
+                    {currentPageData?.isTheoryPage && !currentPageData?.isLoading && !isGeneratingContent && !currentPageData?.hasError && (
+                      <div className="absolute bottom-4 right-6 bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">
+                        AI Generated • {level.concept}
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <Button
-                    onClick={handleFinishStory}
-                    className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
-                  >
-                    Continue Learning
-                    <Sparkles className="h-4 w-4 ml-2" />
-                  </Button>
+                  // Final Page
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-center">
+                      {renderIllustration("quantum_battle_ready")}
+                      <h3 className="text-xl font-bold text-amber-900 mb-4 mt-4">Ready to Apply Your Knowledge?</h3>
+                      <p className="text-sm text-amber-700 mb-6">You've mastered {level.concept}. Now put it into practice!</p>
+                      <Button
+                        onClick={handleStartChallenge}
+                        size="lg"
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transform transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                      >
+                        <Play className="h-5 w-5 mr-2" />
+                        Start {level.concept} Challenge
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
-  // Show story view (default)
-  const currentStoryPage = storyPages[currentPage];
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
-          <ChevronLeft className="h-4 w-4" />
-          Back to Level
-        </Button>
-        <div className="flex items-center gap-2">
-          <Button 
-            onClick={startComicGeneration}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 flex items-center gap-2"
-          >
-            <Users className="h-4 w-4" />
-            Generate Comic
-          </Button>
-          <Badge className="bg-blue-600/20 text-blue-300 flex items-center gap-1">
-            <Book className="h-4 w-4" />
-            Story Mode
-          </Badge>
-        </div>
-      </div>
-
-      {/* Story Book */}
-      <Card className="bg-gradient-to-br from-indigo-900/50 to-purple-900/50 backdrop-blur-lg border-purple-500/20">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Book className="h-12 w-12 text-purple-400" />
-          </div>
-          <CardTitle className="text-2xl text-white mb-2">The Quantum Chronicles</CardTitle>
-          <CardDescription className="text-gray-300">
-            Chapter {level.id}: {level.concept}
-          </CardDescription>
-          <Badge className="bg-blue-600/20 text-blue-300 mx-auto">
-            AI Generated Story
-          </Badge>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          {/* Story Content */}
-          <div className="min-h-[400px] bg-black/20 rounded-lg p-8 border border-purple-500/20">
-            <div className="prose prose-invert max-w-none">
-              <p className="text-lg leading-relaxed text-gray-200">
-                {renderFormattedText(currentStoryPage)}
-              </p>
-            </div>
-          </div>
-
-          {/* Progress and Navigation */}
-          <div className="space-y-4">
-            <div className="flex justify-between text-sm text-gray-400">
-              <span>Page {currentPage + 1} of {storyPages.length}</span>
-              <span>{level.concept}</span>
-            </div>
-            
-            <Progress 
-              value={((currentPage + 1) / storyPages.length) * 100} 
-              className="h-3"
-            />
-
-            <div className="flex justify-between">
+            {/* Navigation Controls */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-4">
               <Button
+                onClick={handlePrevPage}
+                disabled={currentPage === 0 || isFlipping}
                 variant="outline"
-                onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                disabled={currentPage === 0}
-                className="flex items-center gap-2"
+                size="sm"
+                className="border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Previous Page
               </Button>
-
-              {currentPage < storyPages.length - 1 ? (
-                <Button
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 flex items-center gap-2"
-                >
-                  Next Page
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleFinishStory}
-                  className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
-                >
-                  Continue to Theory
-                  <Sparkles className="h-4 w-4 ml-2" />
-                </Button>
-              )}
+              
+              <span className="text-amber-700 font-medium">
+                {currentPage + 1} / {storyPages.length}
+              </span>
+              
+              <Button
+                onClick={handleNextPage}
+                disabled={currentPage >= storyPages.length - 1 || isFlipping}
+                variant="outline"
+                size="sm"
+                className="border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+
+            <div className="absolute bottom-2 left-6 text-xs text-amber-600">
+              Level {level.id} • Page {currentPage + 1} • {level.concept}
+            </div>
+          </Card>
+        </div>
+
+        {/* Enhanced Floating Quantum Particles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className={`absolute w-2 h-2 rounded-full opacity-60 animate-bounce ${
+                i % 3 === 0 ? 'bg-yellow-300' : i % 3 === 1 ? 'bg-blue-300' : 'bg-purple-300'
+              }`}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${2 + Math.random() * 3}s`
+              }}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
+
+// Helper functions for more accurate illustration mapping
+function getAdvancedIllustrationKey(concept: string): string {
+  const conceptMap: Record<string, string> = {
+    'Classical vs Quantum': 'quantum_warrior_intro',
+    'Quantum Basics': 'quantum_superposition',
+    'Wave-Particle Duality': 'quantum_superposition',
+    'Quantum Probability': 'quantum_superposition',
+    'Superposition Paradox': 'quantum_superposition',
+    'Heisenberg Uncertainty': 'quantum_superposition',
+    'Discrete Energy States': 'quantum_superposition',
+    'Quantum Light': 'quantum_superposition',
+    'Computing Paradigms': 'quantum_superposition',
+    'Quantum Revolution': 'quantum_battle_ready',
+    'Quantum Bit Basics': 'quantum_superposition',
+    'Qubit Visualization': 'quantum_superposition',
+    'Computational Basis': 'quantum_superposition',
+    'Linear Combinations': 'quantum_superposition',
+    'Quantum Measurement': 'quantum_superposition',
+    'Quantum Phase': 'quantum_superposition',
+    'Multi-Qubit Systems': 'quantum_superposition',
+    'State Preparation': 'quantum_superposition',
+    'Quantum Coherence': 'quantum_superposition',
+    'Qubit Technologies': 'quantum_superposition',
+    'Quantum Gates': 'quantum_gates',
+    'Gate Operations': 'quantum_gates',
+    'Quantum Entanglement': 'quantum_entanglement',
+    'Bell States': 'quantum_entanglement',
+    'Image Processing Basics': 'quantum_superposition',
+    'Quantum Algorithms': 'quantum_gates',
+    'Quantum Image Processing': 'quantum_entanglement'
+  };
+  return conceptMap[concept] || 'quantum_warrior_intro';
+}
