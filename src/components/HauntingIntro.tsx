@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skull, Zap, Eye } from 'lucide-react';
@@ -11,12 +11,110 @@ interface HauntingIntroProps {
 export const HauntingIntro: React.FC<HauntingIntroProps> = ({ onComplete }) => {
   const [phase, setPhase] = useState<'haunting' | 'villain-appears' | 'warning'>('haunting');
   const [showVillain, setShowVillain] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const oscillatorRef = useRef<OscillatorNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+
+  // Initialize audio context and create haunting sounds
+  const createHauntingSounds = () => {
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      
+      const audioContext = audioContextRef.current;
+      
+      // Create oscillator for low-frequency haunting drone
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.type = 'sawtooth';
+      oscillator.frequency.setValueAtTime(55, audioContext.currentTime); // Low A note
+      
+      // Create haunting effect with frequency modulation
+      const lfo = audioContext.createOscillator();
+      const lfoGain = audioContext.createGain();
+      lfo.frequency.setValueAtTime(0.3, audioContext.currentTime);
+      lfoGain.gain.setValueAtTime(10, audioContext.currentTime);
+      
+      lfo.connect(lfoGain);
+      lfoGain.connect(oscillator.frequency);
+      
+      // Set up gain for fade in/out effects
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 1);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.start();
+      lfo.start();
+      
+      oscillatorRef.current = oscillator;
+      gainNodeRef.current = gainNode;
+      
+    } catch (error) {
+      console.log('Audio context not supported:', error);
+    }
+  };
+
+  // Create villain appearance sound effect
+  const createVillainSound = () => {
+    try {
+      if (!audioContextRef.current) return;
+      
+      const audioContext = audioContextRef.current;
+      
+      // Create dramatic chord for villain appearance
+      const frequencies = [110, 146.83, 174.61]; // A, D, F notes for dark chord
+      
+      frequencies.forEach((freq, index) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+        
+        gain.gain.setValueAtTime(0, audioContext.currentTime);
+        gain.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 2);
+        
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        
+        osc.start();
+        osc.stop(audioContext.currentTime + 2);
+      });
+      
+    } catch (error) {
+      console.log('Villain sound creation failed:', error);
+    }
+  };
+
+  // Stop all sounds
+  const stopSounds = () => {
+    try {
+      if (oscillatorRef.current) {
+        oscillatorRef.current.stop();
+        oscillatorRef.current = null;
+      }
+      if (gainNodeRef.current && audioContextRef.current) {
+        gainNodeRef.current.gain.linearRampToValueAtTime(0, audioContextRef.current.currentTime + 0.5);
+      }
+    } catch (error) {
+      console.log('Error stopping sounds:', error);
+    }
+  };
 
   useEffect(() => {
+    // Start haunting sounds immediately
+    createHauntingSounds();
+
     // Start with haunting atmosphere
     const timer1 = setTimeout(() => {
       setPhase('villain-appears');
       setShowVillain(true);
+      createVillainSound(); // Play villain appearance sound
     }, 3000);
 
     const timer2 = setTimeout(() => {
@@ -26,8 +124,24 @@ export const HauntingIntro: React.FC<HauntingIntroProps> = ({ onComplete }) => {
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
+      stopSounds();
     };
   }, []);
+
+  // Clean up audio when component unmounts
+  useEffect(() => {
+    return () => {
+      stopSounds();
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
+
+  const handleComplete = () => {
+    stopSounds();
+    onComplete();
+  };
 
   const backgroundPattern = "data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23FF0000' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E";
 
@@ -125,7 +239,7 @@ export const HauntingIntro: React.FC<HauntingIntroProps> = ({ onComplete }) => {
                   </div>
                   <div className="mt-6 md:mt-8">
                     <Button
-                      onClick={onComplete}
+                      onClick={handleComplete}
                       className="bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-700 hover:to-purple-700 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-full text-base md:text-lg shadow-2xl transform hover:scale-105 transition-all duration-300 animate-pulse"
                     >
                       <Skull className="h-5 w-5 md:h-6 md:w-6 mr-2" />
