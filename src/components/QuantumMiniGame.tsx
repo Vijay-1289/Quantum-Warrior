@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Star, CheckCircle, XCircle, Lightbulb, Zap, Eye, MousePointer, Target, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Star, CheckCircle, XCircle, Lightbulb, Zap, Eye, MousePointer, Target, Loader2, AlertCircle, Clock } from 'lucide-react';
 import { type QuantumLevel } from '@/data/quantumLevels';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuizQuestions } from '@/utils/theoryContent';
@@ -29,6 +29,7 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
   const [showExplanation, setShowExplanation] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
+  const [timeAdjustment, setTimeAdjustment] = useState<string | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -117,6 +118,14 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
     }
   }, [timeLeft, gameComplete, isLoadingQuestions, questions.length]);
 
+  // Clear time adjustment message after 2 seconds
+  useEffect(() => {
+    if (timeAdjustment) {
+      const timer = setTimeout(() => setTimeAdjustment(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [timeAdjustment]);
+
   const handleAnswerSelect = (answer: string) => {
     setSelectedAnswer(answer);
   };
@@ -129,14 +138,20 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
     
     if (isCorrect) {
       setScore(score + 100);
+      // Increase time by 2 seconds for correct answer
+      setTimeLeft(prev => prev + 2);
+      setTimeAdjustment('+2s');
       toast({
         title: "Excellent! 🎉",
-        description: "You're mastering quantum concepts!",
+        description: "You're mastering quantum concepts! +2 seconds bonus!",
       });
     } else {
+      // Decrease time by 2 seconds for wrong answer
+      setTimeLeft(prev => Math.max(0, prev - 2));
+      setTimeAdjustment('-2s');
       toast({
         title: "Not quite right",
-        description: "Review the explanation and try again!",
+        description: "Review the explanation and try again! -2 seconds penalty",
         variant: "destructive"
       });
     }
@@ -314,9 +329,19 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
         
         <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
           <CardContent className="p-4">
-            <div className="text-center">
+            <div className="text-center relative">
               <div className="text-2xl font-bold text-orange-400">{timeLeft}s</div>
               <p className="text-sm text-gray-400">Time Remaining</p>
+              {timeAdjustment && (
+                <div className={`absolute -top-2 -right-2 text-sm font-bold px-2 py-1 rounded ${
+                  timeAdjustment.startsWith('+') 
+                    ? 'bg-green-500/20 text-green-400' 
+                    : 'bg-red-500/20 text-red-400'
+                } animate-bounce`}>
+                  <Clock className="h-3 w-3 inline mr-1" />
+                  {timeAdjustment}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
