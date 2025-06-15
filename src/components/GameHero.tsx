@@ -17,7 +17,7 @@ export const GameHero: React.FC<GameHeroProps> = ({ playerStats, onStartStory })
   const backgroundPattern = "data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E";
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-r from-purple-900 via-blue-900 to-indigo-900">
+    <div className="relative overflow-hidden bg-gradient-to-r from-purple-900 via-blue-900 to-indigo-900 min-h-screen">
       {/* Animated Background */}
       <div className="absolute inset-0">
         <div 
@@ -26,7 +26,7 @@ export const GameHero: React.FC<GameHeroProps> = ({ playerStats, onStartStory })
         ></div>
       </div>
 
-      <div className="relative container mx-auto px-4 py-16 text-center">
+      <div className="relative container mx-auto px-4 py-16 text-center min-h-screen flex flex-col justify-center">
         {/* Main Title */}
         <div className="mb-8">
           <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-4 animate-fade-in">
