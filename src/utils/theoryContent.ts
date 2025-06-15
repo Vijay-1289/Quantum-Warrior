@@ -1,5 +1,168 @@
-
 const GEMINI_API_KEY = 'AIzaSyAv1w55nm72qtpFiij2FCBmQ0TxCAJ0iNg';
+
+export const generateStoryContent = async (level: any): Promise<string[]> => {
+  console.log(`Generating story content for Level ${level.id}: ${level.title} - Concept: ${level.concept}`);
+  
+  try {
+    const prompt = `Create an engaging narrative story for a quantum computing learning game.
+
+Level Details:
+- Level ID: ${level.id}
+- Title: ${level.title}
+- Concept: ${level.concept}
+- Description: ${level.description}
+- Difficulty: ${level.difficulty}
+
+Create a compelling story that introduces and explains "${level.concept}" through narrative. The story should:
+
+1. Be told in 4-6 engaging pages/segments
+2. Use characters and dialogue to explain the quantum concept
+3. Include bold text formatting using **text** for important concepts
+4. Make the concept accessible for ${level.difficulty} level learners
+5. Build excitement and understanding about ${level.concept}
+6. Use storytelling to make quantum physics concepts relatable
+
+Format the response as separate story pages, each being a complete narrative segment that advances the understanding of ${level.concept}.
+
+IMPORTANT: 
+- Use **bold text** formatting for key concepts and important terms
+- Make each page substantial (200-300 words)
+- Focus on the story narrative that teaches ${level.concept}
+- Include character conversations and interactions
+- Build towards a deeper understanding of the quantum concept
+
+Return the story as individual pages separated by "---PAGE---`;
+
+    console.log('Making Gemini API request for story content:', level.concept);
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.8,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 2048,
+        },
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_HARASSMENT",
+            threshold: "BLOCK_NONE"
+          },
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH",
+            threshold: "BLOCK_NONE"
+          },
+          {
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            threshold: "BLOCK_NONE"
+          },
+          {
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+            threshold: "BLOCK_NONE"
+          }
+        ]
+      })
+    });
+
+    console.log('Story API Response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Story API Error Response:', errorText);
+      
+      // Try with a simpler prompt if the detailed one fails
+      console.log('Retrying with simplified story prompt...');
+      const simplePrompt = `Write an engaging 4-page story that teaches ${level.concept} for quantum computing students. Use **bold** for key terms. Make it educational and exciting.`;
+      
+      const retryResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: simplePrompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1024,
+          }
+        })
+      });
+
+      if (!retryResponse.ok) {
+        throw new Error(`API request failed: ${response.status} - ${errorText}`);
+      }
+
+      const retryData = await retryResponse.json();
+      const retryContent = retryData.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (retryContent) {
+        const pages = retryContent.split('---PAGE---').filter(page => page.trim().length > 100);
+        if (pages.length > 0) {
+          return pages.map(page => page.trim());
+        }
+      }
+    }
+
+    const data = await response.json();
+    console.log('Story API Response received successfully for level', level.id);
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
+      console.error('Invalid story API response structure:', data);
+      throw new Error('Invalid story API response structure');
+    }
+    
+    const generatedContent = data.candidates[0].content.parts[0].text;
+    console.log(`Generated story content for Level ${level.id} (${level.concept}):`, generatedContent.substring(0, 200) + '...');
+    
+    if (!generatedContent || generatedContent.trim().length < 200) {
+      throw new Error('Generated story content too short or empty');
+    }
+    
+    // Split into pages
+    const pages = generatedContent.split('---PAGE---').filter(page => page.trim().length > 100);
+    
+    if (pages.length === 0) {
+      // If no page separators found, split by paragraphs into reasonable chunks
+      const paragraphs = generatedContent.split('\n\n').filter(p => p.trim().length > 50);
+      const pagesFromParagraphs = [];
+      let currentPage = '';
+      
+      for (const paragraph of paragraphs) {
+        if (currentPage.length + paragraph.length > 800) {
+          if (currentPage.length > 0) {
+            pagesFromParagraphs.push(currentPage.trim());
+            currentPage = paragraph;
+          }
+        } else {
+          currentPage += (currentPage.length > 0 ? '\n\n' : '') + paragraph;
+        }
+      }
+      
+      if (currentPage.length > 0) {
+        pagesFromParagraphs.push(currentPage.trim());
+      }
+      
+      return pagesFromParagraphs.length > 0 ? pagesFromParagraphs : [generatedContent];
+    }
+    
+    return pages.map(page => page.trim());
+  } catch (error) {
+    console.error('Error generating story content for level', level.id, 'concept', level.concept, ':', error);
+    throw error;
+  }
+};
 
 export const generateTheoryContent = async (level: any, storyContent?: string): Promise<string> => {
   console.log(`Generating elaborate theory content for Level ${level.id}: ${level.title} - Concept: ${level.concept}`);
