@@ -30,6 +30,7 @@ interface TimeChangeAnimation {
 export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onComplete, onBack }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
+  const [correctAnswers, setCorrectAnswers] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [gameComplete, setGameComplete] = useState(false);
@@ -164,6 +165,7 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
     
     if (isCorrect) {
       setScore(score + 100);
+      setCorrectAnswers(prev => prev + 1);
       // Add 2 seconds for correct answer
       setTimeLeft(prev => prev + 2);
       showTimeChangeAnimation(2);
@@ -197,8 +199,16 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
 
   const handleGameComplete = () => {
     setGameComplete(true);
-    const finalScore = score + Math.max(0, timeLeft * 2);
-    const earnedStars = finalScore >= 800 ? 3 : finalScore >= 600 ? 2 : finalScore >= 400 ? 1 : 0;
+    
+    // Calculate stars based on correct answers
+    let earnedStars = 0;
+    if (correctAnswers >= questions.length) {
+      earnedStars = 3; // All questions correct
+    } else if (correctAnswers >= 2) {
+      earnedStars = 2; // 2 or more correct
+    } else if (correctAnswers >= 1) {
+      earnedStars = 1; // At least 1 correct
+    }
     
     setTimeout(() => {
       onComplete(earnedStars);
@@ -265,8 +275,17 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
   const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
 
   if (gameComplete) {
+    // Calculate stars based on correct answers
+    let earnedStars = 0;
+    if (correctAnswers >= questions.length) {
+      earnedStars = 3; // All questions correct
+    } else if (correctAnswers >= 2) {
+      earnedStars = 2; // 2 or more correct
+    } else if (correctAnswers >= 1) {
+      earnedStars = 1; // At least 1 correct
+    }
+    
     const finalScore = score + Math.max(0, timeLeft * 2);
-    const earnedStars = finalScore >= 800 ? 3 : finalScore >= 600 ? 2 : finalScore >= 400 ? 1 : 0;
 
     return (
       <Card className="bg-gradient-to-br from-green-900/50 to-blue-900/50 backdrop-blur-lg border-green-500/20">
@@ -291,14 +310,27 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
             ))}
           </div>
           
-          <div className="grid grid-cols-2 gap-4 text-center">
+          <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-3xl font-bold text-blue-400">{finalScore}</div>
+              <div className="text-2xl font-bold text-blue-400">{finalScore}</div>
               <p className="text-gray-300">Final Score</p>
             </div>
             <div>
-              <div className="text-3xl font-bold text-yellow-400">{earnedStars}</div>
+              <div className="text-2xl font-bold text-green-400">{correctAnswers}/{questions.length}</div>
+              <p className="text-gray-300">Correct Answers</p>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-yellow-400">{earnedStars}</div>
               <p className="text-gray-300">Stars Earned</p>
+            </div>
+          </div>
+
+          <div className="bg-black/20 rounded-lg p-4 border border-purple-500/20">
+            <p className="text-gray-300 text-sm mb-2">Star Requirements:</p>
+            <div className="text-xs text-gray-400 space-y-1">
+              <p>⭐ 1 Star: Answer 1 question correctly</p>
+              <p>⭐⭐ 2 Stars: Answer 2 questions correctly</p>
+              <p>⭐⭐⭐ 3 Stars: Answer all questions correctly</p>
             </div>
           </div>
 
@@ -347,7 +379,7 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
           <CardContent className="p-4">
             <div className="flex justify-between text-sm text-gray-300 mb-2">
               <span>Question {currentQuestion + 1} of {questions.length}</span>
-              <span>Score: {score}</span>
+              <span>Correct: {correctAnswers}/{questions.length}</span>
             </div>
             <Progress value={progress} className="h-3" />
           </CardContent>
