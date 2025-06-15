@@ -221,7 +221,7 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({ playerProgress, onLevelC
         )}
 
         {/* Level Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8">
           {currentChapterLevels.map((level) => {
             const unlocked = isLevelUnlocked(level);
             const completed = isLevelCompleted(level.id);
