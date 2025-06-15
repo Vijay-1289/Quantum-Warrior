@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,7 +49,11 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
       setHasError(false);
       
       try {
-        const generatedQuestions = await generateQuizQuestions(level);
+        // Get the theory content from localStorage if available
+        const theoryContent = localStorage.getItem(`theory_content_level_${level.id}`);
+        console.log('Theory content found for quiz generation:', theoryContent ? 'Yes' : 'No');
+        
+        const generatedQuestions = await generateQuizQuestions(level, theoryContent || undefined);
         console.log('Quiz questions generated successfully for level', level.id);
         setQuestions(generatedQuestions);
       } catch (error) {
@@ -115,9 +118,9 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Generating Quiz Questions</h3>
-              <p className="text-gray-300">Creating personalized questions for {level.concept}...</p>
-              <p className="text-gray-400 text-sm mt-2">This may take a few moments</p>
+              <h3 className="text-xl font-bold text-white mb-2">Generating Theory-Based Quiz</h3>
+              <p className="text-gray-300">Creating challenging questions based on {level.concept} theory...</p>
+              <p className="text-gray-400 text-sm mt-2">Questions will reference the detailed theory you studied</p>
             </div>
           </div>
         </CardContent>

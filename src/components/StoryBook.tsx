@@ -29,6 +29,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [bookOpened, setBookOpened] = useState(false);
   const [storyPages, setStoryPages] = useState<StoryPage[]>([]);
   const [isGeneratingContent, setIsGeneratingContent] = useState(true);
+  const [generatedTheoryContent, setGeneratedTheoryContent] = useState<string>('');
 
   // Generate initial story pages with unique content for each level
   const generateInitialPages = (level: QuantumLevel): StoryPage[] => {
@@ -82,8 +83,14 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
       console.log(`Starting AI content generation for Level ${level.id} - Concept: ${level.concept}`);
       
       try {
-        const content = await generateTheoryContent(level);
+        // Get the story content from page 2 to pass as reference
+        const storyContent = `${level.storyText}\n\nAs you can see, ${level.concept} plays a crucial role in this quantum realm. The story you just experienced directly relates to the theoretical foundations you're about to learn.`;
+        
+        const content = await generateTheoryContent(level, storyContent);
         console.log(`AI theory content successfully generated for Level ${level.id} - ${level.concept}:`, content.substring(0, 100) + '...');
+        
+        // Store the generated theory content for quiz generation
+        setGeneratedTheoryContent(content);
         
         setStoryPages(prevPages => 
           prevPages.map(page => 
@@ -144,6 +151,10 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
 
   const handleStartChallenge = () => {
     setBookOpened(false);
+    // Pass the generated theory content to the game component via localStorage
+    if (generatedTheoryContent) {
+      localStorage.setItem(`theory_content_level_${level.id}`, generatedTheoryContent);
+    }
     setTimeout(onComplete, 800);
   };
 
