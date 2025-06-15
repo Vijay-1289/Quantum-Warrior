@@ -1,59 +1,35 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { StoryBoard } from '@/components/StoryBoard';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserProgress } from '@/hooks/useUserProgress';
+import { AuthPage } from '@/components/AuthPage';
+import { useNavigate } from 'react-router-dom';
 
 const StoryBoardPage = () => {
-  const [playerProgress, setPlayerProgress] = useState({
-    completedLevels: [] as number[],
-    currentLevel: 1,
-    totalStars: 0,
-    levelStars: {} as Record<number, number> // Track stars per level
-  });
+  const { user, loading: authLoading } = useAuth();
+  const { progress, loading: progressLoading, updateProgress } = useUserProgress();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const savedProgress = localStorage.getItem('quantumStoryProgress');
-    if (savedProgress) {
-      const parsed = JSON.parse(savedProgress);
-      // Ensure levelStars exists for backward compatibility
-      if (!parsed.levelStars) {
-        parsed.levelStars = {};
-      }
-      setPlayerProgress(parsed);
-    }
-  }, []);
+  if (authLoading || progressLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading your quantum journey...</div>
+      </div>
+    );
+  }
 
-  const saveProgress = (progress: typeof playerProgress) => {
-    localStorage.setItem('quantumStoryProgress', JSON.stringify(progress));
-    setPlayerProgress(progress);
-  };
+  if (!user) {
+    return <AuthPage onAuthSuccess={() => navigate('/')} />;
+  }
 
   const handleLevelComplete = (levelId: number, stars: number) => {
-    const wasAlreadyCompleted = playerProgress.completedLevels.includes(levelId);
-    const previousStars = playerProgress.levelStars[levelId] || 0;
-    
-    // Only add stars if this is a new completion or if more stars were earned
-    const starDifference = Math.max(0, stars - previousStars);
-    
-    const newProgress = {
-      ...playerProgress,
-      completedLevels: wasAlreadyCompleted 
-        ? playerProgress.completedLevels 
-        : [...playerProgress.completedLevels, levelId],
-      currentLevel: Math.max(playerProgress.currentLevel, levelId + 1),
-      totalStars: playerProgress.totalStars + starDifference,
-      levelStars: {
-        ...playerProgress.levelStars,
-        [levelId]: Math.max(previousStars, stars) // Keep the best score
-      }
-    };
-    
-    console.log(`Level ${levelId} completed with ${stars} stars. Total stars: ${newProgress.totalStars}`);
-    saveProgress(newProgress);
+    updateProgress(levelId, stars);
   };
 
   return (
     <StoryBoard 
-      playerProgress={playerProgress}
+      playerProgress={progress}
       onLevelComplete={handleLevelComplete}
     />
   );

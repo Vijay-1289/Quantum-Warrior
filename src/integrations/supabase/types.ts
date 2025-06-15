@@ -9,7 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      user_progress: {
+        Row: {
+          completed_levels: number[] | null
+          created_at: string | null
+          current_level: number | null
+          id: string
+          level_stars: Json | null
+          total_stars: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_levels?: number[] | null
+          created_at?: string | null
+          current_level?: number | null
+          id?: string
+          level_stars?: Json | null
+          total_stars?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_levels?: number[] | null
+          created_at?: string | null
+          current_level?: number | null
+          id?: string
+          level_stars?: Json | null
+          total_stars?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
