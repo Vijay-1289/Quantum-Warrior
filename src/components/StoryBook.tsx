@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +29,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   const [storyPages, setStoryPages] = useState<StoryPage[]>([]);
   const [isGeneratingContent, setIsGeneratingContent] = useState(true);
   const [generatedTheoryContent, setGeneratedTheoryContent] = useState<string>('');
+  const [retryCount, setRetryCount] = useState(0);
 
   // Generate initial story pages with unique content for each level
   const generateInitialPages = (level: QuantumLevel): StoryPage[] => {
@@ -77,6 +77,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
     const initialPages = generateInitialPages(level);
     setStoryPages(initialPages);
     setIsGeneratingContent(true);
+    setRetryCount(0);
     
     // Generate theory content immediately for this specific level
     const loadTheoryContent = async () => {
@@ -114,7 +115,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
             page.isTheoryPage 
               ? { 
                   ...page, 
-                  content: `Failed to generate AI content for "${level.concept}". Please check your internet connection and try again.`,
+                  content: `Failed to generate AI content for "${level.concept}". This may be due to network issues or API limits. Please wait a moment and try refreshing the page.`,
                   isLoading: false,
                   hasError: true
                 }
@@ -128,6 +129,65 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
     loadTheoryContent();
     setTimeout(() => setBookOpened(true), 500);
   }, [level.id, level.concept, level.title]);
+
+  const handleRetryGeneration = async () => {
+    if (retryCount >= 3) {
+      console.log('Maximum retry attempts reached');
+      return;
+    }
+
+    setRetryCount(prev => prev + 1);
+    setIsGeneratingContent(true);
+    
+    setStoryPages(prevPages => 
+      prevPages.map(page => 
+        page.isTheoryPage 
+          ? { 
+              ...page, 
+              isLoading: true,
+              hasError: false
+            }
+          : page
+      )
+    );
+
+    try {
+      const storyContent = `${level.storyText}\n\nAs you can see, ${level.concept} plays a crucial role in this quantum realm. The story you just experienced directly relates to the theoretical foundations you're about to learn.`;
+      
+      const content = await generateTheoryContent(level, storyContent);
+      setGeneratedTheoryContent(content);
+      
+      setStoryPages(prevPages => 
+        prevPages.map(page => 
+          page.isTheoryPage 
+            ? { 
+                ...page, 
+                content, 
+                isLoading: false,
+                hasError: false,
+                title: `Deep Dive: ${level.concept}` 
+              }
+            : page
+        )
+      );
+      setIsGeneratingContent(false);
+    } catch (error) {
+      console.error(`Retry failed for Level ${level.id}:`, error);
+      setStoryPages(prevPages => 
+        prevPages.map(page => 
+          page.isTheoryPage 
+            ? { 
+                ...page, 
+                content: `Failed to generate AI content after ${retryCount + 1} attempts. Please check your internet connection and try again later.`,
+                isLoading: false,
+                hasError: true
+              }
+            : page
+        )
+      );
+      setIsGeneratingContent(false);
+    }
+  };
 
   const handleNextPage = () => {
     if (currentPage < storyPages.length - 1 && !isFlipping) {
@@ -154,6 +214,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
     // Pass the generated theory content to the game component via localStorage
     if (generatedTheoryContent) {
       localStorage.setItem(`theory_content_level_${level.id}`, generatedTheoryContent);
+      console.log(`Stored theory content for Level ${level.id} quiz generation`);
     }
     setTimeout(onComplete, 800);
   };
@@ -259,6 +320,9 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                           <p className="text-amber-700 font-semibold">Generating AI content for</p>
                           <p className="text-amber-800 text-lg font-bold">{level.concept}</p>
                           <p className="text-amber-600 text-xs mt-2">Level {level.id} • This may take a moment</p>
+                          {retryCount > 0 && (
+                            <p className="text-amber-500 text-xs mt-1">Attempt {retryCount + 1} of 3</p>
+                          )}
                         </div>
                       </div>
                     ) : currentPageData?.hasError ? (
@@ -267,6 +331,15 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                           <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
                           <p className="text-red-700 font-semibold">Failed to generate AI content</p>
                           <p className="text-red-600 text-sm mt-2">Please check your connection and try again</p>
+                          {retryCount < 3 && (
+                            <Button
+                              onClick={handleRetryGeneration}
+                              className="mt-4 bg-amber-600 hover:bg-amber-700 text-white text-sm px-4 py-2"
+                              disabled={isGeneratingContent}
+                            >
+                              {isGeneratingContent ? 'Retrying...' : 'Retry Generation'}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ) : (

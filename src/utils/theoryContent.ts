@@ -45,7 +45,7 @@ Generate content that provides deep theoretical understanding of "${level.concep
 
     console.log('Making Gemini API request for elaborate theory content:', level.concept);
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +61,25 @@ Generate content that provides deep theoretical understanding of "${level.concep
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 2048,
-        }
+        },
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_HARASSMENT",
+            threshold: "BLOCK_NONE"
+          },
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH",
+            threshold: "BLOCK_NONE"
+          },
+          {
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            threshold: "BLOCK_NONE"
+          },
+          {
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+            threshold: "BLOCK_NONE"
+          }
+        ]
       })
     });
 
@@ -69,8 +87,39 @@ Generate content that provides deep theoretical understanding of "${level.concep
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Gemini API Error:', errorText);
-      throw new Error(`API request failed: ${response.status} - ${errorText}`);
+      console.error('Gemini API Error Response:', errorText);
+      
+      // Try with a simpler prompt if the detailed one fails
+      console.log('Retrying with simplified prompt...');
+      const simplePrompt = `Explain ${level.concept} in detail for a quantum computing course. Include theory, examples, and applications. Make it comprehensive and educational.`;
+      
+      const retryResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: simplePrompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1024,
+          }
+        })
+      });
+
+      if (!retryResponse.ok) {
+        throw new Error(`API request failed: ${response.status} - ${errorText}`);
+      }
+
+      const retryData = await retryResponse.json();
+      const retryContent = retryData.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (retryContent) {
+        return retryContent;
+      }
     }
 
     const data = await response.json();
@@ -152,7 +201,7 @@ IMPORTANT: Return ONLY the JSON array, no additional text or formatting.`;
 
     console.log('Making Gemini API request for quiz questions based on theory for concept:', level.concept);
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -168,7 +217,25 @@ IMPORTANT: Return ONLY the JSON array, no additional text or formatting.`;
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 1536,
-        }
+        },
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_HARASSMENT",
+            threshold: "BLOCK_NONE"
+          },
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH", 
+            threshold: "BLOCK_NONE"
+          },
+          {
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            threshold: "BLOCK_NONE"
+          },
+          {
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+            threshold: "BLOCK_NONE"
+          }
+        ]
       })
     });
 
@@ -177,6 +244,53 @@ IMPORTANT: Return ONLY the JSON array, no additional text or formatting.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Quiz API Error:', errorText);
+      
+      // Try with a simpler prompt for quiz generation
+      const simpleQuizPrompt = `Create 3 multiple choice questions about ${level.concept} for quantum computing students. Return as JSON array with question, options array, correct index, and explanation.`;
+      
+      const retryResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: simpleQuizPrompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.6,
+            maxOutputTokens: 1024,
+          }
+        })
+      });
+
+      if (!retryResponse.ok) {
+        throw new Error(`Quiz API request failed: ${response.status} - ${errorText}`);
+      }
+
+      const retryData = await retryResponse.json();
+      const retryText = retryData.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (retryText) {
+        // Try to extract JSON from retry response
+        const jsonMatch = retryText.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          try {
+            const questions = JSON.parse(jsonMatch[0]);
+            if (Array.isArray(questions) && questions.length > 0) {
+              return questions.filter(q => 
+                q.question && q.options && Array.isArray(q.options) && 
+                q.options.length === 4 && typeof q.correct === 'number' && q.explanation
+              );
+            }
+          } catch (parseError) {
+            console.error('Failed to parse retry quiz JSON:', parseError);
+          }
+        }
+      }
+      
       throw new Error(`API request failed: ${response.status} - ${errorText}`);
     }
 

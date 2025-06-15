@@ -39,6 +39,7 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [retryAttempts, setRetryAttempts] = useState(0);
   const { toast } = useToast();
 
   // Load AI-generated questions when component mounts
@@ -53,9 +54,18 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
         const theoryContent = localStorage.getItem(`theory_content_level_${level.id}`);
         console.log('Theory content found for quiz generation:', theoryContent ? 'Yes' : 'No');
         
+        if (theoryContent) {
+          console.log('Using stored theory content for quiz generation:', theoryContent.substring(0, 100) + '...');
+        }
+        
         const generatedQuestions = await generateQuizQuestions(level, theoryContent || undefined);
         console.log('Quiz questions generated successfully for level', level.id);
-        setQuestions(generatedQuestions);
+        
+        if (generatedQuestions && generatedQuestions.length > 0) {
+          setQuestions(generatedQuestions);
+        } else {
+          throw new Error('No valid questions generated');
+        }
       } catch (error) {
         console.error('Failed to generate quiz questions for level', level.id, ':', error);
         setHasError(true);
@@ -67,6 +77,35 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
 
     loadQuestions();
   }, [level]);
+
+  const handleRetryQuestions = async () => {
+    if (retryAttempts >= 2) {
+      console.log('Maximum retry attempts reached for quiz generation');
+      return;
+    }
+
+    setRetryAttempts(prev => prev + 1);
+    setIsLoadingQuestions(true);
+    setHasError(false);
+
+    try {
+      const theoryContent = localStorage.getItem(`theory_content_level_${level.id}`);
+      const generatedQuestions = await generateQuizQuestions(level, theoryContent || undefined);
+      
+      if (generatedQuestions && generatedQuestions.length > 0) {
+        setQuestions(generatedQuestions);
+        setHasError(false);
+      } else {
+        throw new Error('No valid questions generated on retry');
+      }
+    } catch (error) {
+      console.error(`Quiz retry ${retryAttempts + 1} failed:`, error);
+      setHasError(true);
+      setQuestions([]);
+    } finally {
+      setIsLoadingQuestions(false);
+    }
+  };
 
   const handleAnswerSelect = (answer: string) => {
     setSelectedAnswer(answer);
@@ -121,6 +160,9 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
               <h3 className="text-xl font-bold text-white mb-2">Generating Theory-Based Quiz</h3>
               <p className="text-gray-300">Creating challenging questions based on {level.concept} theory...</p>
               <p className="text-gray-400 text-sm mt-2">Questions will reference the detailed theory you studied</p>
+              {retryAttempts > 0 && (
+                <p className="text-yellow-400 text-sm mt-1">Retry attempt {retryAttempts} of 2</p>
+              )}
             </div>
           </div>
         </CardContent>
@@ -139,12 +181,24 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
               <h3 className="text-xl font-bold text-white mb-2">Failed to Generate Questions</h3>
               <p className="text-gray-300">Unable to create quiz questions for {level.concept}</p>
               <p className="text-gray-400 text-sm mt-2">Please check your internet connection and try again</p>
-              <Button 
-                onClick={() => window.location.reload()} 
-                className="mt-4 bg-purple-600 hover:bg-purple-700"
-              >
-                Try Again
-              </Button>
+              <div className="flex gap-3 mt-4 justify-center">
+                {retryAttempts < 2 && (
+                  <Button 
+                    onClick={handleRetryQuestions}
+                    className="bg-purple-600 hover:bg-purple-700"
+                    disabled={isLoadingQuestions}
+                  >
+                    {isLoadingQuestions ? 'Retrying...' : 'Retry Generation'}
+                  </Button>
+                )}
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  variant="outline"
+                  className="border-gray-500 text-gray-300 hover:bg-gray-700"
+                >
+                  Reload Page
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
