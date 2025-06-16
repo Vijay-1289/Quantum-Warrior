@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { CheckCircle, XCircle, Lightbulb, Zap, Target, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuizQuestions } from '@/utils/theoryContent';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Level {
   id: number;
@@ -42,6 +44,7 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
   const [hasError, setHasError] = useState(false);
   const [retryAttempts, setRetryAttempts] = useState(0);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Function to render text with bold formatting
   const renderFormattedText = (text: string) => {
@@ -166,15 +169,15 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
   if (isLoadingQuestions) {
     return (
       <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
-        <CardContent className="p-8">
-          <div className="flex items-center justify-center h-64">
+        <CardContent className={`${isMobile ? 'p-4' : 'p-8'}`}>
+          <div className={`flex items-center justify-center ${isMobile ? 'h-48' : 'h-64'}`}>
             <div className="text-center">
-              <Loader2 className="h-12 w-12 animate-spin text-purple-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Generating Theory-Based Quiz</h3>
-              <p className="text-gray-300">Creating challenging questions based on {level.concept} theory...</p>
-              <p className="text-gray-400 text-sm mt-2">Questions will reference the detailed theory you studied</p>
+              <Loader2 className={`${isMobile ? 'h-8 w-8' : 'h-12 w-12'} animate-spin text-purple-400 mx-auto mb-4`} />
+              <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-white mb-2`}>Generating Theory-Based Quiz</h3>
+              <p className={`text-gray-300 ${isMobile ? 'text-sm' : 'text-base'}`}>Creating challenging questions based on {level.concept} theory...</p>
+              <p className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'} mt-2`}>Questions will reference the detailed theory you studied</p>
               {retryAttempts > 0 && (
-                <p className="text-yellow-400 text-sm mt-1">Retry attempt {retryAttempts} of 2</p>
+                <p className={`text-yellow-400 ${isMobile ? 'text-xs' : 'text-sm'} mt-1`}>Retry attempt {retryAttempts} of 2</p>
               )}
             </div>
           </div>
@@ -187,19 +190,20 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
   if (hasError || questions.length === 0) {
     return (
       <Card className="bg-black/20 backdrop-blur-lg border-red-500/20">
-        <CardContent className="p-8">
-          <div className="flex items-center justify-center h-64">
+        <CardContent className={`${isMobile ? 'p-4' : 'p-8'}`}>
+          <div className={`flex items-center justify-center ${isMobile ? 'h-48' : 'h-64'}`}>
             <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Failed to Generate Questions</h3>
-              <p className="text-gray-300">Unable to create quiz questions for {level.concept}</p>
-              <p className="text-gray-400 text-sm mt-2">Please check your internet connection and try again</p>
-              <div className="flex gap-3 mt-4 justify-center">
+              <AlertCircle className={`${isMobile ? 'h-8 w-8' : 'h-12 w-12'} text-red-400 mx-auto mb-4`} />
+              <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-white mb-2`}>Failed to Generate Questions</h3>
+              <p className={`text-gray-300 ${isMobile ? 'text-sm' : 'text-base'}`}>Unable to create quiz questions for {level.concept}</p>
+              <p className={`text-gray-400 ${isMobile ? 'text-xs' : 'text-sm'} mt-2`}>Please check your internet connection and try again</p>
+              <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-3 mt-4 justify-center`}>
                 {retryAttempts < 2 && (
                   <Button 
                     onClick={handleRetryQuestions}
                     className="bg-purple-600 hover:bg-purple-700"
                     disabled={isLoadingQuestions}
+                    size={isMobile ? "sm" : "default"}
                   >
                     {isLoadingQuestions ? 'Retrying...' : 'Retry Generation'}
                   </Button>
@@ -208,6 +212,7 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
                   onClick={() => window.location.reload()} 
                   variant="outline"
                   className="border-gray-500 text-gray-300 hover:bg-gray-700"
+                  size={isMobile ? "sm" : "default"}
                 >
                   Reload Page
                 </Button>
@@ -226,21 +231,22 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
       <Card className="bg-gradient-to-br from-green-900/50 to-blue-900/50 backdrop-blur-lg border-green-500/20">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <CheckCircle className="h-16 w-16 text-green-400" />
+            <CheckCircle className={`${isMobile ? 'h-12 w-12' : 'h-16 w-16'} text-green-400`} />
           </div>
-          <CardTitle className="text-2xl text-white">Level Complete!</CardTitle>
-          <CardDescription className="text-gray-300">
+          <CardTitle className={`${isMobile ? 'text-xl' : 'text-2xl'} text-white`}>Level Complete!</CardTitle>
+          <CardDescription className={`text-gray-300 ${isMobile ? 'text-sm' : 'text-base'}`}>
             You've mastered {level.concept}!
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center">
           <div className="mb-6">
-            <div className="text-4xl font-bold text-yellow-400 mb-2">{score}</div>
-            <p className="text-gray-300">Final Score</p>
+            <div className={`${isMobile ? 'text-3xl' : 'text-4xl'} font-bold text-yellow-400 mb-2`}>{score}</div>
+            <p className={`text-gray-300 ${isMobile ? 'text-sm' : 'text-base'}`}>Final Score</p>
           </div>
           <Button 
             onClick={handleCompleteLevel}
             className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+            size={isMobile ? "sm" : "default"}
           >
             Continue Journey
           </Button>
@@ -254,7 +260,7 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
   if (!currentQuestionData) {
     return (
       <Card className="bg-black/20 backdrop-blur-lg border-red-500/20">
-        <CardContent className="p-8 text-center">
+        <CardContent className={`${isMobile ? 'p-4' : 'p-8'} text-center`}>
           <p className="text-red-400">Failed to load questions. Please try again.</p>
         </CardContent>
       </Card>
@@ -262,104 +268,108 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 h-full">
       {/* Progress Bar */}
       <div className="space-y-2">
-        <div className="flex justify-between text-sm text-gray-300">
+        <div className={`flex justify-between ${isMobile ? 'text-xs' : 'text-sm'} text-gray-300`}>
           <span>Question {currentQuestion + 1} of {questions.length}</span>
           <span>Score: {score}</span>
         </div>
-        <Progress value={progress} className="h-3" />
+        <Progress value={progress} className={`${isMobile ? 'h-2' : 'h-3'}`} />
       </div>
 
-      {/* Question Card */}
-      <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
-        <CardHeader>
-          <div className="flex items-center gap-2 mb-2">
-            <Lightbulb className="h-5 w-5 text-yellow-400" />
-            <Badge className="bg-purple-600/20 text-purple-300">
-              {level.concept}
-            </Badge>
-            <Badge className="bg-blue-600/20 text-blue-300 text-xs">
-              AI Generated
-            </Badge>
-          </div>
-          <CardTitle className="text-xl text-white">
-            {renderFormattedText(currentQuestionData.question)}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 gap-3 mb-6">
-            {currentQuestionData.options.map((option, index) => (
-              <Button
-                key={index}
-                variant={selectedAnswer === option ? "default" : "outline"}
-                className={`text-left justify-start h-auto p-4 ${
-                  selectedAnswer === option 
-                    ? 'bg-purple-600 border-purple-400 text-white' 
-                    : 'bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50'
-                }`}
-                onClick={() => handleAnswerSelect(option)}
-                disabled={showExplanation}
-              >
-                <span className="font-semibold mr-3">
-                  {String.fromCharCode(65 + index)}.
-                </span>
-                <span>{renderFormattedText(option)}</span>
-              </Button>
-            ))}
-          </div>
+      {/* Question Card - Scrollable on mobile */}
+      <ScrollArea className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-auto'}`}>
+        <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
+          <CardHeader className={`${isMobile ? 'p-4 pb-2' : 'p-6'}`}>
+            <div className={`flex flex-wrap items-center gap-2 mb-2`}>
+              <Lightbulb className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-yellow-400`} />
+              <Badge className={`bg-purple-600/20 text-purple-300 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                {level.concept}
+              </Badge>
+              <Badge className={`bg-blue-600/20 text-blue-300 ${isMobile ? 'text-xs' : 'text-xs'}`}>
+                AI Generated
+              </Badge>
+            </div>
+            <CardTitle className={`${isMobile ? 'text-lg leading-6' : 'text-xl'} text-white`}>
+              {renderFormattedText(currentQuestionData.question)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className={`${isMobile ? 'p-4 pt-0' : 'p-6 pt-0'}`}>
+            <div className={`grid grid-cols-1 gap-${isMobile ? '2' : '3'} mb-${isMobile ? '4' : '6'}`}>
+              {currentQuestionData.options.map((option, index) => (
+                <Button
+                  key={index}
+                  variant={selectedAnswer === option ? "default" : "outline"}
+                  className={`text-left justify-start h-auto ${isMobile ? 'p-3 text-sm' : 'p-4'} ${
+                    selectedAnswer === option 
+                      ? 'bg-purple-600 border-purple-400 text-white' 
+                      : 'bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50'
+                  }`}
+                  onClick={() => handleAnswerSelect(option)}
+                  disabled={showExplanation}
+                >
+                  <span className={`font-semibold mr-${isMobile ? '2' : '3'}`}>
+                    {String.fromCharCode(65 + index)}.
+                  </span>
+                  <span className={`${isMobile ? 'text-sm' : 'text-base'}`}>{renderFormattedText(option)}</span>
+                </Button>
+              ))}
+            </div>
 
-          {/* Explanation */}
-          {showExplanation && (
-            <Card className={`mb-4 ${
-              selectedAnswer === currentQuestionData.options[currentQuestionData.correct]
-                ? 'bg-green-900/20 border-green-500/30'
-                : 'bg-red-900/20 border-red-500/30'
-            }`}>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? (
-                    <CheckCircle className="h-5 w-5 text-green-400 mt-0.5" />
-                  ) : (
-                    <XCircle className="h-5 w-5 text-red-400 mt-0.5" />
-                  )}
-                  <div>
-                    <p className="font-semibold text-white mb-2">
-                      {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? 'Correct!' : 'Incorrect'}
-                    </p>
-                    <p className="text-gray-300 text-sm">
-                      {renderFormattedText(currentQuestionData.explanation)}
-                    </p>
+            {/* Explanation */}
+            {showExplanation && (
+              <Card className={`mb-4 ${
+                selectedAnswer === currentQuestionData.options[currentQuestionData.correct]
+                  ? 'bg-green-900/20 border-green-500/30'
+                  : 'bg-red-900/20 border-red-500/30'
+              }`}>
+                <CardContent className={`${isMobile ? 'p-3' : 'p-4'}`}>
+                  <div className="flex items-start gap-3">
+                    {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? (
+                      <CheckCircle className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-green-400 mt-0.5`} />
+                    ) : (
+                      <XCircle className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-red-400 mt-0.5`} />
+                    )}
+                    <div>
+                      <p className={`font-semibold text-white mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                        {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? 'Correct!' : 'Incorrect'}
+                      </p>
+                      <p className={`text-gray-300 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                        {renderFormattedText(currentQuestionData.explanation)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex justify-between">
-            {!showExplanation ? (
-              <Button
-                onClick={handleSubmitAnswer}
-                disabled={!selectedAnswer}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                <Target className="h-4 w-4 mr-2" />
-                Submit Answer
-              </Button>
-            ) : (
-              <Button
-                onClick={handleNextQuestion}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-              >
-                {currentQuestion < questions.length - 1 ? 'Next Question' : 'Complete Level'}
-                <Zap className="h-4 w-4 ml-2" />
-              </Button>
+                </CardContent>
+              </Card>
             )}
-          </div>
-        </CardContent>
-      </Card>
+
+            {/* Action Buttons */}
+            <div className="flex justify-between">
+              {!showExplanation ? (
+                <Button
+                  onClick={handleSubmitAnswer}
+                  disabled={!selectedAnswer}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  size={isMobile ? "sm" : "default"}
+                >
+                  <Target className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} mr-2`} />
+                  Submit Answer
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleNextQuestion}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  size={isMobile ? "sm" : "default"}
+                >
+                  {currentQuestion < questions.length - 1 ? 'Next Question' : 'Complete Level'}
+                  <Zap className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} ml-2`} />
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </ScrollArea>
     </div>
   );
 };
