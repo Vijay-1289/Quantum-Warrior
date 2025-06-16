@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -452,26 +451,29 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
             </CardTitle>
           </CardHeader>
           <CardContent className={`${isMobile ? 'p-4 pt-0' : 'p-6 pt-0'}`}>
-            <div className={`grid grid-cols-1 gap-${isMobile ? '2' : '3'} mb-${isMobile ? '4' : '6'}`}>
-              {currentQuestionData.options.map((option, index) => (
-                <Button
-                  key={index}
-                  variant={selectedAnswer === option ? "default" : "outline"}
-                  className={`text-left justify-start h-auto ${isMobile ? 'p-3 text-sm' : 'p-4'} ${
-                    selectedAnswer === option 
-                      ? 'bg-purple-600 border-purple-400 text-white' 
-                      : 'bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50'
-                  }`}
-                  onClick={() => handleAnswerSelect(option)}
-                  disabled={showExplanation}
-                >
-                  <span className={`font-semibold mr-${isMobile ? '2' : '3'}`}>
-                    {String.fromCharCode(65 + index)}.
-                  </span>
-                  <span className={`${isMobile ? 'text-sm' : 'text-base'}`}>{renderFormattedText(option)}</span>
-                </Button>
-              ))}
-            </div>
+            {/* Scrollable Options Container */}
+            <ScrollArea className={`${isMobile ? 'max-h-64' : 'max-h-80'} mb-${isMobile ? '4' : '6'}`}>
+              <div className={`grid grid-cols-1 gap-${isMobile ? '2' : '3'} pr-4`}>
+                {currentQuestionData.options.map((option, index) => (
+                  <Button
+                    key={index}
+                    variant={selectedAnswer === option ? "default" : "outline"}
+                    className={`text-left justify-start h-auto ${isMobile ? 'p-3 text-sm' : 'p-4'} whitespace-normal break-words ${
+                      selectedAnswer === option 
+                        ? 'bg-purple-600 border-purple-400 text-white' 
+                        : 'bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50'
+                    }`}
+                    onClick={() => handleAnswerSelect(option)}
+                    disabled={showExplanation}
+                  >
+                    <span className={`font-semibold mr-${isMobile ? '2' : '3'} flex-shrink-0`}>
+                      {String.fromCharCode(65 + index)}.
+                    </span>
+                    <span className={`${isMobile ? 'text-sm' : 'text-base'} leading-relaxed`}>{renderFormattedText(option)}</span>
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
 
             {/* Explanation */}
             {showExplanation && (
@@ -483,15 +485,15 @@ export const QuantumMiniGame: React.FC<QuantumMiniGameProps> = ({ level, onCompl
                 <CardContent className={`${isMobile ? 'p-3' : 'p-4'}`}>
                   <div className="flex items-start gap-3">
                     {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? (
-                      <CheckCircle className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-green-400 mt-0.5`} />
+                      <CheckCircle className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-green-400 mt-0.5 flex-shrink-0`} />
                     ) : (
-                      <XCircle className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-red-400 mt-0.5`} />
+                      <XCircle className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-red-400 mt-0.5 flex-shrink-0`} />
                     )}
-                    <div>
+                    <div className="flex-1">
                       <p className={`font-semibold text-white mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>
                         {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? 'Correct!' : 'Incorrect'}
                       </p>
-                      <p className={`text-gray-300 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                      <p className={`text-gray-300 ${isMobile ? 'text-xs' : 'text-sm'} leading-relaxed`}>
                         {renderFormattedText(currentQuestionData.explanation)}
                       </p>
                     </div>
