@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -154,7 +155,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
     ];
   };
 
-  // Initialize story pages and generate AI content immediately when component mounts
+  // Initialize story pages and generate AI content - SINGLE useEffect
   useEffect(() => {
     console.log(`StoryBook mounted for Level ${level.id}: ${level.title} - Concept: ${level.concept}`);
     
@@ -322,67 +323,6 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
     return <IllustrationComponent />;
   };
 
-  // Initialize story pages and generate AI content immediately when component mounts
-  useEffect(() => {
-    console.log(`StoryBook mounted for Level ${level.id}: ${level.title} - Concept: ${level.concept}`);
-    
-    const initialPages = generateInitialPages(level);
-    setStoryPages(initialPages);
-    setIsGeneratingContent(true);
-    setRetryCount(0);
-    
-    // Generate theory content immediately for this specific level
-    const loadTheoryContent = async () => {
-      console.log(`Starting AI content generation for Level ${level.id} - Concept: ${level.concept}`);
-      
-      try {
-        // Get the story content from page 2 to pass as reference
-        const storyContent = `${level.storyText}\n\nAs you can see, ${level.concept} plays a crucial role in this quantum realm. The story you just experienced directly relates to the theoretical foundations you're about to learn.`;
-        
-        const content = await generateTheoryContent(level, storyContent);
-        console.log(`AI theory content successfully generated for Level ${level.id} - ${level.concept}:`, content.substring(0, 100) + '...');
-        
-        // Store the generated theory content for quiz generation
-        setGeneratedTheoryContent(content);
-        
-        setStoryPages(prevPages => 
-          prevPages.map(page => 
-            page.isTheoryPage 
-              ? { 
-                  ...page, 
-                  content, 
-                  isLoading: false,
-                  hasError: false,
-                  title: `Deep Dive: ${level.concept}`,
-                  aiGeneratedSVG: generateRelevantSVG(level.concept, `Deep Dive: ${level.concept}`, content)
-                }
-              : page
-          )
-        );
-        setIsGeneratingContent(false);
-      } catch (error) {
-        console.error(`Failed to generate AI content for Level ${level.id} - ${level.concept}:`, error);
-        
-        setStoryPages(prevPages => 
-          prevPages.map(page => 
-            page.isTheoryPage 
-              ? { 
-                  ...page, 
-                  content: `Failed to generate AI content for "${level.concept}". This may be due to network issues or API limits. Please wait a moment and try refreshing the page.`,
-                  isLoading: false,
-                  hasError: true
-                }
-              : page
-          )
-        );
-        setIsGeneratingContent(false);
-      }
-    };
-
-    loadTheoryContent();
-    setTimeout(() => setBookOpened(true), 500);
-  }, [level.id, level.concept, level.title]);
-
   const currentPageData = storyPages[currentPage];
 
   if (!currentPageData) {
@@ -397,13 +337,13 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
   }
 
   return (
-    <div className={`${isMobile ? 'min-h-screen p-2' : 'min-h-screen p-4'} bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center`}>
-      <div className={`relative ${isMobile ? 'w-full h-full' : 'w-full max-w-4xl'} mx-auto ${isMobile ? 'px-1' : 'px-4'}`}>
-        {/* Book Container - Mobile Responsive */}
+    <div className={`${isMobile ? 'h-screen w-full p-1' : 'min-h-screen p-4'} bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center overflow-hidden`}>
+      <div className={`relative ${isMobile ? 'w-full h-full flex items-center justify-center' : 'w-full max-w-4xl'} mx-auto ${isMobile ? '' : 'px-4'}`}>
+        {/* Book Container - Optimized for Mobile */}
         <div 
           className={`relative transform transition-all duration-1000 ease-out ${
             bookOpened ? 'scale-100 rotate-0' : 'scale-75 rotate-12'
-          } ${isMobile ? 'h-full' : ''}`}
+          } ${isMobile ? 'w-full h-full max-w-sm max-h-[85vh]' : ''}`}
           style={{
             perspective: '1000px',
             transformStyle: 'preserve-3d'
@@ -416,7 +356,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
             }`}
             style={{
               width: '100%',
-              height: isMobile ? '100%' : '400px',
+              height: isMobile ? '100%' : '500px',
               transformOrigin: 'left center',
               backfaceVisibility: 'hidden'
             }}
@@ -431,22 +371,22 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
             </div>
           </div>
 
-          {/* Book Pages - Fully Responsive */}
+          {/* Book Pages - Full Container Fit */}
           <Card 
             className={`relative bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-800 shadow-2xl transform transition-all duration-1000 ease-out ${
               bookOpened ? 'rotateY-0' : 'rotateY-90'
             }`}
             style={{
               width: '100%',
-              height: isMobile ? '100%' : '400px',
+              height: isMobile ? '100%' : '500px',
               transformOrigin: 'left center',
               backfaceVisibility: 'hidden'
             }}
           >
-            {/* Page Content */}
+            {/* Page Content - Optimized Layout */}
             <div className="h-full flex flex-col">
               {/* Top Section - AI-Generated SVG Illustration */}
-              <div className={`w-full ${isMobile ? 'h-1/3' : 'h-32'} p-3 border-b border-amber-200 bg-gradient-to-br from-purple-50 to-blue-50 overflow-hidden`}>
+              <div className={`w-full ${isMobile ? 'h-2/5' : 'h-40'} p-2 border-b border-amber-200 bg-gradient-to-br from-purple-50 to-blue-50 overflow-hidden relative`}>
                 <div 
                   className={`transform transition-all duration-500 ease-out h-full ${
                     isFlipping ? 'scale-95 opacity-50 rotate-y-12' : 'scale-100 opacity-100 rotate-y-0'
@@ -465,14 +405,14 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
               </div>
 
               {/* Bottom Section - Content */}
-              <div className={`flex-1 ${isMobile ? 'p-2' : 'p-3'} overflow-hidden`}>
+              <div className={`flex-1 ${isMobile ? 'p-2' : 'p-4'} overflow-hidden relative`}>
                 {currentPage < storyPages.length - 1 ? (
                   <div 
                     className={`transform transition-all duration-500 ease-out h-full ${
                       isFlipping ? 'scale-95 opacity-50 translate-x-4' : 'scale-100 opacity-100 translate-x-0'
                     }`}
                   >
-                    <h3 className={`${isMobile ? 'text-sm' : 'text-base'} font-bold text-amber-900 mb-2 text-center border-b border-amber-300 pb-1`}>
+                    <h3 className={`${isMobile ? 'text-sm' : 'text-lg'} font-bold text-amber-900 mb-2 text-center border-b border-amber-300 pb-1`}>
                       {currentPageData?.title}
                     </h3>
                     
@@ -507,9 +447,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                         </div>
                       </div>
                     ) : (
-                      <div className={`text-amber-800 leading-tight overflow-y-auto ${isMobile ? 'text-xs' : 'text-sm'} ${
-                        currentPageData?.isTheoryPage ? (isMobile ? 'max-h-48' : 'max-h-40') : (isMobile ? 'max-h-40' : 'max-h-36')
-                      }`}>
+                      <div className={`text-amber-800 leading-tight overflow-y-auto ${isMobile ? 'text-xs h-full pb-8' : 'text-sm h-full pb-12'}`}>
                         {renderFormattedText(currentPageData?.content || '')}
                       </div>
                     )}
@@ -525,8 +463,8 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                   // Final Page - Challenge Start
                   <div className="flex flex-col items-center justify-center h-full">
                     <div className="text-center">
-                      <h3 className={`${isMobile ? 'text-sm' : 'text-base'} font-bold text-amber-900 mb-2`}>Ready to Apply Your Knowledge?</h3>
-                      <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-amber-700 mb-3`}>You've mastered {level.concept}. Now put it into practice!</p>
+                      <h3 className={`${isMobile ? 'text-sm' : 'text-lg'} font-bold text-amber-900 mb-3`}>Ready to Apply Your Knowledge?</h3>
+                      <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-amber-700 mb-4`}>You've mastered {level.concept}. Now put it into practice!</p>
                       <Button
                         onClick={handleStartChallenge}
                         size="sm"
@@ -541,19 +479,19 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
               </div>
             </div>
 
-            {/* Navigation Controls - Mobile Optimized */}
-            <div className={`absolute ${isMobile ? 'bottom-2' : 'bottom-1'} left-1/2 transform -translate-x-1/2 flex items-center gap-2`}>
+            {/* Navigation Controls - Fixed Position */}
+            <div className={`absolute ${isMobile ? 'bottom-1' : 'bottom-2'} left-1/2 transform -translate-x-1/2 flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-2 py-1`}>
               <Button
                 onClick={handlePrevPage}
                 disabled={currentPage === 0 || isFlipping}
                 variant="outline"
                 size="sm"
-                className={`border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${isMobile ? 'text-xs px-2 py-1 h-7 w-7' : 'text-xs px-2 py-1 h-6 w-6'}`}
+                className={`border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${isMobile ? 'h-6 w-6 p-0' : 'h-7 w-7 p-0'}`}
               >
-                <ChevronLeft className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3'}`} />
+                <ChevronLeft className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
               </Button>
               
-              <span className={`text-amber-700 font-medium ${isMobile ? 'text-sm' : 'text-xs'}`}>
+              <span className={`text-amber-700 font-medium px-2 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                 {currentPage + 1}/{storyPages.length}
               </span>
               
@@ -562,13 +500,14 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
                 disabled={currentPage >= storyPages.length - 1 || isFlipping}
                 variant="outline"
                 size="sm"
-                className={`border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${isMobile ? 'text-xs px-2 py-1 h-7 w-7' : 'text-xs px-2 py-1 h-6 w-6'}`}
+                className={`border-amber-600 text-amber-700 hover:bg-amber-100 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${isMobile ? 'h-6 w-6 p-0' : 'h-7 w-7 p-0'}`}
               >
-                <ChevronRight className={`${isMobile ? 'h-4 w-4' : 'h-3 w-3'}`} />
+                <ChevronRight className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
               </Button>
             </div>
 
-            <div className={`absolute bottom-0 left-2 ${isMobile ? 'text-xs' : 'text-xs'} text-amber-600`}>
+            {/* Page Info - Bottom Left */}
+            <div className={`absolute bottom-1 left-2 ${isMobile ? 'text-xs' : 'text-xs'} text-amber-600 bg-white/60 backdrop-blur-sm rounded px-1`}>
               L{level.id} • P{currentPage + 1} • {level.concept}
             </div>
           </Card>
@@ -576,7 +515,7 @@ export const StoryBook: React.FC<StoryBookProps> = ({ level, onComplete }) => {
 
         {/* Enhanced Floating Quantum Particles - Mobile Optimized */}
         <div className="absolute inset-0 pointer-events-none">
-          {[...Array(isMobile ? 4 : 6)].map((_, i) => (
+          {[...Array(isMobile ? 3 : 6)].map((_, i) => (
             <div
               key={i}
               className={`absolute ${isMobile ? 'w-1 h-1' : 'w-1 h-1'} rounded-full opacity-40 animate-bounce ${
