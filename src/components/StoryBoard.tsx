@@ -70,6 +70,42 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({
     return '';
   };
 
+  // Group levels into chapters of 10
+  const groupLevelsIntoChapters = () => {
+    const chapters: { [key: number]: typeof quantumLevels } = {};
+    quantumLevels.forEach(level => {
+      const chapterNumber = Math.floor((level.id - 1) / 10) + 1;
+      if (!chapters[chapterNumber]) {
+        chapters[chapterNumber] = [];
+      }
+      chapters[chapterNumber].push(level);
+    });
+    return chapters;
+  };
+
+  const chapters = groupLevelsIntoChapters();
+
+  const getChapterTitle = (chapterNumber: number): string => {
+    const chapterTitles: { [key: number]: string } = {
+      1: "Foundations of Reality",
+      2: "Wave-Particle Mysteries", 
+      3: "Quantum Entanglement",
+      4: "Measurement & Observation",
+      5: "Advanced Quantum Mechanics"
+    };
+    return chapterTitles[chapterNumber] || `Chapter ${chapterNumber}`;
+  };
+
+  const getChapterStars = (chapterNumber: number): number => {
+    const chapterLevels = chapters[chapterNumber] || [];
+    return chapterLevels.reduce((total, level) => total + getStarsForLevel(level.id), 0);
+  };
+
+  const isChapterUnlocked = (chapterNumber: number): boolean => {
+    if (chapterNumber === 1) return true;
+    return playerProgress.totalStars >= (chapterNumber - 1) * 20;
+  };
+
   if (selectedLevel) {
     const level = quantumLevels.find(l => l.id === selectedLevel);
     if (level) {
@@ -142,7 +178,7 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({
             <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
               <CardContent className={`${isMobile ? 'p-3' : 'p-4'} text-center`}>
                 <div className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-purple-400`}>
-                  {Math.floor(playerProgress.currentLevel / 10) + 1}
+                  {Math.floor((playerProgress.currentLevel - 1) / 10) + 1}
                 </div>
                 <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-300`}>Chapter</p>
               </CardContent>
@@ -150,111 +186,173 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({
           </div>
         </div>
 
-        {/* Level Grid */}
+        {/* Chapters */}
         <ScrollArea className={`${isMobile ? 'h-[60vh]' : 'h-[70vh]'}`}>
-          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-6`}>
-            {quantumLevels.map((level) => {
-              const isCompleted = isLevelCompleted(level.id);
-              const isAccessible = isLevelAccessible(level.id);
-              const stars = getStarsForLevel(level.id);
-              const accessMessage = getAccessibilityMessage(level.id);
+          <div className="space-y-8">
+            {Object.entries(chapters).map(([chapterNumber, chapterLevels]) => {
+              const chapterNum = parseInt(chapterNumber);
+              const chapterUnlocked = isChapterUnlocked(chapterNum);
+              const chapterStars = getChapterStars(chapterNum);
               
               return (
-                <Card 
-                  key={level.id}
-                  className={`relative overflow-hidden transition-all duration-300 ${
-                    isAccessible 
-                      ? 'hover:scale-105 bg-gradient-to-br from-slate-800/50 to-purple-800/50 backdrop-blur-lg border-purple-500/20 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer'
-                      : 'bg-gray-800/30 backdrop-blur-lg border-gray-600/20'
-                  }`}
-                  onClick={() => isAccessible && setSelectedLevel(level.id)}
-                >
-                  {/* Lock Overlay for Inaccessible Levels */}
-                  {!isAccessible && (
-                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-10">
-                      <Lock className={`${isMobile ? 'h-8 w-8' : 'h-12 w-12'} text-gray-400 mb-2`} />
-                      <p className={`text-gray-400 text-center ${isMobile ? 'text-xs' : 'text-sm'} px-4`}>
-                        {accessMessage}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Completion Badge */}
-                  {isCompleted && (
-                    <div className="absolute top-2 right-2 z-20">
-                      <Badge className="bg-green-600 text-white flex items-center gap-1">
-                        <Trophy className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
-                        Complete
-                      </Badge>
-                    </div>
-                  )}
-
-                  <CardHeader className={`${isMobile ? 'p-4' : 'p-6'}`}>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`${isMobile ? 'p-2' : 'p-3'} rounded-full ${isAccessible ? 'bg-white/20' : 'bg-gray-600/20'}`}>
-                        <Atom className={`${isMobile ? 'h-5 w-5' : 'h-6 w-6'} ${isAccessible ? 'text-white' : 'text-gray-400'}`} />
+                <div key={chapterNumber} className="space-y-4">
+                  {/* Chapter Header */}
+                  <Card className={`${chapterUnlocked ? 'bg-gradient-to-r from-purple-800/50 to-blue-800/50' : 'bg-gray-800/30'} backdrop-blur-lg border-purple-500/20`}>
+                    <CardContent className={`${isMobile ? 'p-4' : 'p-6'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={`${isMobile ? 'p-2' : 'p-3'} rounded-full ${chapterUnlocked ? 'bg-purple-600' : 'bg-gray-600'}`}>
+                            <BookOpen className={`${isMobile ? 'h-5 w-5' : 'h-6 w-6'} text-white`} />
+                          </div>
+                          <div>
+                            <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold ${chapterUnlocked ? 'text-white' : 'text-gray-400'}`}>
+                              Chapter {chapterNumber}: {getChapterTitle(chapterNum)}
+                            </h2>
+                            <p className={`${isMobile ? 'text-sm' : 'text-base'} ${chapterUnlocked ? 'text-gray-300' : 'text-gray-500'}`}>
+                              Levels {(chapterNum - 1) * 10 + 1} - {chapterNum * 10}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            {[...Array(3)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} ${
+                                  i < Math.floor(chapterStars / 10) ? 'text-yellow-400 fill-current' : 'text-gray-400'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className={`${isMobile ? 'text-sm' : 'text-base'} ${chapterUnlocked ? 'text-gray-300' : 'text-gray-500'}`}>
+                            {chapterStars}/30 stars
+                          </span>
+                          {!chapterUnlocked && (
+                            <Lock className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-gray-400 ml-2`} />
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} ${isAccessible ? 'text-white' : 'text-gray-400'}`}>
-                          Level {level.id}: {level.title}
-                        </CardTitle>
-                        <Badge className={`${getDifficultyColor(level.difficulty)} ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                          {level.difficulty}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Stars Display */}
-                    <div className="flex items-center gap-1 mb-3">
-                      {[...Array(3)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} ${
-                            i < stars ? 'text-yellow-400 fill-current' : 'text-gray-400'
-                          }`}
-                        />
-                      ))}
-                      <span className={`ml-2 ${isMobile ? 'text-sm' : 'text-base'} ${isAccessible ? 'text-gray-300' : 'text-gray-500'}`}>
-                        {stars}/3 stars
-                      </span>
-                    </div>
-
-                    <CardDescription className={`${isMobile ? 'text-sm' : 'text-base'} ${isAccessible ? 'text-gray-300' : 'text-gray-500'} mb-4`}>
-                      {level.description}
-                    </CardDescription>
-
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <Badge variant="outline" className={`${isAccessible ? 'border-purple-400 text-purple-300' : 'border-gray-500 text-gray-400'} ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                        <BookOpen className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} mr-1`} />
-                        {level.concept}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className={`${isMobile ? 'p-4 pt-0' : 'p-6 pt-0'}`}>
-                    <Button 
-                      className={`w-full ${
-                        isAccessible 
-                          ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
-                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      }`}
-                      disabled={!isAccessible}
-                      size={isMobile ? "sm" : "default"}
-                    >
-                      {isAccessible ? (
-                        <>
-                          <Target className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} mr-2`} />
-                          {isCompleted ? 'Play Again' : 'Start Level'}
-                        </>
-                      ) : (
-                        <>
-                          <Lock className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} mr-2`} />
-                          Locked
-                        </>
+                      
+                      {!chapterUnlocked && (
+                        <div className="mt-4 p-3 bg-gray-700/30 rounded-lg">
+                          <p className={`${isMobile ? 'text-sm' : 'text-base'} text-gray-400 text-center`}>
+                            Complete previous chapters to unlock this chapter. Need {(chapterNum - 1) * 20} total stars.
+                          </p>
+                        </div>
                       )}
-                    </Button>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+
+                  {/* Chapter Levels */}
+                  {chapterUnlocked && (
+                    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-3'} gap-6 ml-4`}>
+                      {chapterLevels.map((level) => {
+                        const isCompleted = isLevelCompleted(level.id);
+                        const isAccessible = isLevelAccessible(level.id);
+                        const stars = getStarsForLevel(level.id);
+                        const accessMessage = getAccessibilityMessage(level.id);
+                        
+                        return (
+                          <Card 
+                            key={level.id}
+                            className={`relative overflow-hidden transition-all duration-300 ${
+                              isAccessible 
+                                ? 'hover:scale-105 bg-gradient-to-br from-slate-800/50 to-purple-800/50 backdrop-blur-lg border-purple-500/20 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer'
+                                : 'bg-gray-800/30 backdrop-blur-lg border-gray-600/20'
+                            }`}
+                            onClick={() => isAccessible && setSelectedLevel(level.id)}
+                          >
+                            {/* Lock Overlay for Inaccessible Levels */}
+                            {!isAccessible && (
+                              <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center z-10">
+                                <Lock className={`${isMobile ? 'h-8 w-8' : 'h-12 w-12'} text-gray-400 mb-2`} />
+                                <p className={`text-gray-400 text-center ${isMobile ? 'text-xs' : 'text-sm'} px-4`}>
+                                  {accessMessage}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Completion Badge */}
+                            {isCompleted && (
+                              <div className="absolute top-2 right-2 z-20">
+                                <Badge className="bg-green-600 text-white flex items-center gap-1">
+                                  <Trophy className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                                  Complete
+                                </Badge>
+                              </div>
+                            )}
+
+                            <CardHeader className={`${isMobile ? 'p-4' : 'p-6'}`}>
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className={`${isMobile ? 'p-2' : 'p-3'} rounded-full ${isAccessible ? 'bg-white/20' : 'bg-gray-600/20'}`}>
+                                  <Atom className={`${isMobile ? 'h-5 w-5' : 'h-6 w-6'} ${isAccessible ? 'text-white' : 'text-gray-400'}`} />
+                                </div>
+                                <div className="flex-1">
+                                  <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} ${isAccessible ? 'text-white' : 'text-gray-400'}`}>
+                                    Level {level.id}: {level.title}
+                                  </CardTitle>
+                                  <Badge className={`${getDifficultyColor(level.difficulty)} ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                                    {level.difficulty}
+                                  </Badge>
+                                </div>
+                              </div>
+
+                              {/* Stars Display */}
+                              <div className="flex items-center gap-1 mb-3">
+                                {[...Array(3)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} ${
+                                      i < stars ? 'text-yellow-400 fill-current' : 'text-gray-400'
+                                    }`}
+                                  />
+                                ))}
+                                <span className={`ml-2 ${isMobile ? 'text-sm' : 'text-base'} ${isAccessible ? 'text-gray-300' : 'text-gray-500'}`}>
+                                  {stars}/3 stars
+                                </span>
+                              </div>
+
+                              <CardDescription className={`${isMobile ? 'text-sm' : 'text-base'} ${isAccessible ? 'text-gray-300' : 'text-gray-500'} mb-4`}>
+                                {level.description}
+                              </CardDescription>
+
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                <Badge variant="outline" className={`${isAccessible ? 'border-purple-400 text-purple-300' : 'border-gray-500 text-gray-400'} ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                                  <BookOpen className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} mr-1`} />
+                                  {level.concept}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+
+                            <CardContent className={`${isMobile ? 'p-4 pt-0' : 'p-6 pt-0'}`}>
+                              <Button 
+                                className={`w-full ${
+                                  isAccessible 
+                                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white'
+                                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                }`}
+                                disabled={!isAccessible}
+                                size={isMobile ? "sm" : "default"}
+                              >
+                                {isAccessible ? (
+                                  <>
+                                    <Target className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} mr-2`} />
+                                    {isCompleted ? 'Play Again' : 'Start Level'}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Lock className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} mr-2`} />
+                                    Locked
+                                  </>
+                                )}
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
