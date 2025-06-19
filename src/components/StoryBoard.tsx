@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Star, Trophy, Lock, Zap, BookOpen, Target } from 'lucide-react';
+import { Star, Trophy, Lock, Zap, BookOpen, Target, Atom } from 'lucide-react';
 import { quantumLevels } from '@/data/quantumLevels';
 import { LevelDetail } from '@/components/LevelDetail';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -192,7 +192,7 @@ export const StoryBoard: React.FC<StoryBoardProps> = ({
                   <CardHeader className={`${isMobile ? 'p-4' : 'p-6'}`}>
                     <div className="flex items-center gap-3 mb-3">
                       <div className={`${isMobile ? 'p-2' : 'p-3'} rounded-full ${isAccessible ? 'bg-white/20' : 'bg-gray-600/20'}`}>
-                        <level.icon className={`${isMobile ? 'h-5 w-5' : 'h-6 w-6'} ${isAccessible ? 'text-white' : 'text-gray-400'}`} />
+                        <Atom className={`${isMobile ? 'h-5 w-5' : 'h-6 w-6'} ${isAccessible ? 'text-white' : 'text-gray-400'}`} />
                       </div>
                       <div className="flex-1">
                         <CardTitle className={`${isMobile ? 'text-lg' : 'text-xl'} ${isAccessible ? 'text-white' : 'text-gray-400'}`}>
