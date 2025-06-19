@@ -4,7 +4,7 @@ import { StoryBoard } from '@/components/StoryBoard';
 import { useUserProgress } from '@/hooks/useUserProgress';
 
 const StoryBoardPage = () => {
-  const { progress, loading: progressLoading, updateProgress } = useUserProgress();
+  const { progress, loading: progressLoading, updateProgress, canAccessLevel } = useUserProgress();
 
   if (progressLoading) {
     return (
@@ -23,6 +23,7 @@ const StoryBoardPage = () => {
       <StoryBoard 
         playerProgress={progress}
         onLevelComplete={handleLevelComplete}
+        canAccessLevel={canAccessLevel}
       />
     </div>
   );

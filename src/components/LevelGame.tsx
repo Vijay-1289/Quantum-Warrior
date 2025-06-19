@@ -277,101 +277,125 @@ export const LevelGame: React.FC<LevelGameProps> = ({ level, onComplete }) => {
         <Progress value={progress} className={`${isMobile ? 'h-2' : 'h-3'}`} />
       </div>
 
-      {/* Question Card - Scrollable on mobile */}
-      <ScrollArea className={`${isMobile ? 'h-[calc(100vh-200px)]' : 'h-auto'}`}>
-        <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
-          <CardHeader className={`${isMobile ? 'p-4 pb-2' : 'p-6'}`}>
-            <div className={`flex flex-wrap items-center gap-2 mb-2`}>
-              <Lightbulb className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-yellow-400`} />
-              <Badge className={`bg-purple-600/20 text-purple-300 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                {level.concept}
-              </Badge>
-              <Badge className={`bg-blue-600/20 text-blue-300 ${isMobile ? 'text-xs' : 'text-xs'}`}>
-                AI Generated
-              </Badge>
+      {/* Question Card */}
+      <Card className="bg-black/20 backdrop-blur-lg border-purple-500/20">
+        <CardHeader className={`${isMobile ? 'p-4 pb-2' : 'p-6'}`}>
+          <div className={`flex flex-wrap items-center gap-2 mb-2`}>
+            <Lightbulb className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-yellow-400`} />
+            <Badge className={`bg-purple-600/20 text-purple-300 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+              {level.concept}
+            </Badge>
+            <Badge className={`bg-blue-600/20 text-blue-300 ${isMobile ? 'text-xs' : 'text-xs'}`}>
+              AI Generated
+            </Badge>
+          </div>
+          <CardTitle className={`${isMobile ? 'text-lg leading-6' : 'text-xl'} text-white`}>
+            {renderFormattedText(currentQuestionData.question)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className={`${isMobile ? 'p-4 pt-0' : 'p-6 pt-0'}`}>
+          {/* Mobile: Full height scrollable container for options */}
+          {isMobile ? (
+            <div className="h-[50vh] mb-4">
+              <ScrollArea className="h-full">
+                <div className="grid grid-cols-1 gap-3 pr-4">
+                  {currentQuestionData.options.map((option, index) => (
+                    <Button
+                      key={index}
+                      variant={selectedAnswer === option ? "default" : "outline"}
+                      className={`text-left justify-start h-auto p-4 whitespace-normal break-words min-h-[60px] ${
+                        selectedAnswer === option 
+                          ? 'bg-purple-600 border-purple-400 text-white' 
+                          : 'bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50'
+                      }`}
+                      onClick={() => handleAnswerSelect(option)}
+                      disabled={showExplanation}
+                    >
+                      <span className="font-semibold mr-3 flex-shrink-0 text-lg">
+                        {String.fromCharCode(65 + index)}.
+                      </span>
+                      <span className="text-sm leading-relaxed">{renderFormattedText(option)}</span>
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
-            <CardTitle className={`${isMobile ? 'text-lg leading-6' : 'text-xl'} text-white`}>
-              {renderFormattedText(currentQuestionData.question)}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className={`${isMobile ? 'p-4 pt-0' : 'p-6 pt-0'}`}>
-            {/* Scrollable Options Container */}
-            <ScrollArea className={`${isMobile ? 'max-h-64' : 'max-h-80'} mb-${isMobile ? '4' : '6'}`}>
-              <div className={`grid grid-cols-1 gap-${isMobile ? '2' : '3'} pr-4`}>
-                {currentQuestionData.options.map((option, index) => (
-                  <Button
-                    key={index}
-                    variant={selectedAnswer === option ? "default" : "outline"}
-                    className={`text-left justify-start h-auto ${isMobile ? 'p-3 text-sm' : 'p-4'} whitespace-normal break-words ${
-                      selectedAnswer === option 
-                        ? 'bg-purple-600 border-purple-400 text-white' 
-                        : 'bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50'
-                    }`}
-                    onClick={() => handleAnswerSelect(option)}
-                    disabled={showExplanation}
-                  >
-                    <span className={`font-semibold mr-${isMobile ? '2' : '3'} flex-shrink-0`}>
-                      {String.fromCharCode(65 + index)}.
-                    </span>
-                    <span className={`${isMobile ? 'text-sm' : 'text-base'} leading-relaxed`}>{renderFormattedText(option)}</span>
-                  </Button>
-                ))}
-              </div>
-            </ScrollArea>
+          ) : (
+            /* Desktop: Regular layout */
+            <div className="grid grid-cols-1 gap-3 mb-6">
+              {currentQuestionData.options.map((option, index) => (
+                <Button
+                  key={index}
+                  variant={selectedAnswer === option ? "default" : "outline"}
+                  className={`text-left justify-start h-auto p-4 whitespace-normal break-words ${
+                    selectedAnswer === option 
+                      ? 'bg-purple-600 border-purple-400 text-white' 
+                      : 'bg-gray-800/50 border-gray-600 text-gray-300 hover:bg-gray-700/50'
+                  }`}
+                  onClick={() => handleAnswerSelect(option)}
+                  disabled={showExplanation}
+                >
+                  <span className="font-semibold mr-3 flex-shrink-0">
+                    {String.fromCharCode(65 + index)}.
+                  </span>
+                  <span className="text-base leading-relaxed">{renderFormattedText(option)}</span>
+                </Button>
+              ))}
+            </div>
+          )}
 
-            {/* Explanation */}
-            {showExplanation && (
-              <Card className={`mb-4 ${
-                selectedAnswer === currentQuestionData.options[currentQuestionData.correct]
-                  ? 'bg-green-900/20 border-green-500/30'
-                  : 'bg-red-900/20 border-red-500/30'
-              }`}>
-                <CardContent className={`${isMobile ? 'p-3' : 'p-4'}`}>
-                  <div className="flex items-start gap-3">
-                    {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? (
-                      <CheckCircle className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-green-400 mt-0.5 flex-shrink-0`} />
-                    ) : (
-                      <XCircle className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-red-400 mt-0.5 flex-shrink-0`} />
-                    )}
-                    <div className="flex-1">
-                      <p className={`font-semibold text-white mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>
-                        {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? 'Correct!' : 'Incorrect'}
-                      </p>
-                      <p className={`text-gray-300 ${isMobile ? 'text-xs' : 'text-sm'} leading-relaxed`}>
-                        {renderFormattedText(currentQuestionData.explanation)}
-                      </p>
-                    </div>
+          {/* Explanation */}
+          {showExplanation && (
+            <Card className={`mb-4 ${
+              selectedAnswer === currentQuestionData.options[currentQuestionData.correct]
+                ? 'bg-green-900/20 border-green-500/30'
+                : 'bg-red-900/20 border-red-500/30'
+            }`}>
+              <CardContent className={`${isMobile ? 'p-3' : 'p-4'}`}>
+                <div className="flex items-start gap-3">
+                  {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? (
+                    <CheckCircle className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-green-400 mt-0.5 flex-shrink-0`} />
+                  ) : (
+                    <XCircle className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-red-400 mt-0.5 flex-shrink-0`} />
+                  )}
+                  <div className="flex-1">
+                    <p className={`font-semibold text-white mb-2 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                      {selectedAnswer === currentQuestionData.options[currentQuestionData.correct] ? 'Correct!' : 'Incorrect'}
+                    </p>
+                    <p className={`text-gray-300 ${isMobile ? 'text-xs' : 'text-sm'} leading-relaxed`}>
+                      {renderFormattedText(currentQuestionData.explanation)}
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            {/* Action Buttons */}
-            <div className="flex justify-between">
-              {!showExplanation ? (
-                <Button
-                  onClick={handleSubmitAnswer}
-                  disabled={!selectedAnswer}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                  size={isMobile ? "sm" : "default"}
-                >
-                  <Target className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} mr-2`} />
-                  Submit Answer
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleNextQuestion}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                  size={isMobile ? "sm" : "default"}
-                >
-                  {currentQuestion < questions.length - 1 ? 'Next Question' : 'Complete Level'}
-                  <Zap className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} ml-2`} />
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </ScrollArea>
+          {/* Action Buttons */}
+          <div className="flex justify-between">
+            {!showExplanation ? (
+              <Button
+                onClick={handleSubmitAnswer}
+                disabled={!selectedAnswer}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                size={isMobile ? "sm" : "default"}
+              >
+                <Target className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} mr-2`} />
+                Submit Answer
+              </Button>
+            ) : (
+              <Button
+                onClick={handleNextQuestion}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                size={isMobile ? "sm" : "default"}
+              >
+                {currentQuestion < questions.length - 1 ? 'Next Question' : 'Complete Level'}
+                <Zap className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'} ml-2`} />
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

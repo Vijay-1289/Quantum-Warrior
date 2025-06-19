@@ -57,17 +57,47 @@ export const useUserProgress = () => {
     }
   };
 
+  // Check if user can access a level based on star requirements
+  const canAccessLevel = (levelId: number): boolean => {
+    // Level 1 is always accessible
+    if (levelId === 1) return true;
+    
+    // For subsequent levels, check if previous level has at least 2 stars
+    const previousLevelStars = progress.levelStars[levelId - 1] || 0;
+    const hasRequiredStarsForPrevious = previousLevelStars >= 2;
+    
+    // For chapter transitions (every 10 levels), check total stars
+    const isChapterTransition = levelId % 10 === 1 && levelId > 1;
+    const hasRequiredTotalStars = isChapterTransition ? progress.totalStars >= 20 : true;
+    
+    return hasRequiredStarsForPrevious && hasRequiredTotalStars;
+  };
+
   const updateProgress = (levelId: number, stars: number) => {
     const wasAlreadyCompleted = progress.completedLevels.includes(levelId);
     const previousStars = progress.levelStars[levelId] || 0;
     const starDifference = Math.max(0, stars - previousStars);
+
+    // Calculate the next accessible level
+    let nextLevel = progress.currentLevel;
+    if (!wasAlreadyCompleted && stars >= 2) {
+      // Only advance if they got at least 2 stars
+      nextLevel = Math.max(progress.currentLevel, levelId + 1);
+    } else if (!wasAlreadyCompleted && stars < 2) {
+      // Show message about needing 2 stars to advance
+      toast({
+        title: "Level Complete!",
+        description: `You need at least 2 stars to unlock the next level. Current: ${stars} stars`,
+        variant: "destructive"
+      });
+    }
 
     const newProgress = {
       ...progress,
       completedLevels: wasAlreadyCompleted 
         ? progress.completedLevels 
         : [...progress.completedLevels, levelId],
-      currentLevel: Math.max(progress.currentLevel, levelId + 1),
+      currentLevel: nextLevel,
       totalStars: progress.totalStars + starDifference,
       levelStars: {
         ...progress.levelStars,
@@ -80,15 +110,18 @@ export const useUserProgress = () => {
 
     console.log(`Level ${levelId} completed with ${stars} stars. Total stars: ${newProgress.totalStars}`);
     
-    toast({
-      title: "Progress Saved!",
-      description: `Level ${levelId} completed with ${stars} stars.`,
-    });
+    if (stars >= 2) {
+      toast({
+        title: "Great Progress!",
+        description: `Level ${levelId} completed with ${stars} stars. Next level unlocked!`,
+      });
+    }
   };
 
   return {
     progress,
     loading,
     updateProgress,
+    canAccessLevel,
   };
 };
