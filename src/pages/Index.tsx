@@ -5,6 +5,7 @@ import { QuantumRoadmap } from '@/components/QuantumRoadmap';
 import { HauntingIntro } from '@/components/HauntingIntro';
 import { useUserProgress } from '@/hooks/useUserProgress';
 import { useNavigate } from 'react-router-dom';
+import ClickSpark from '@/components/ClickSpark';
 
 const Index = () => {
   const { progress, loading: progressLoading } = useUserProgress();
@@ -53,24 +54,42 @@ const Index = () => {
   };
 
   if (showHauntingIntro) {
-    return <HauntingIntro onComplete={handleHauntingComplete} />;
+    return (
+      <ClickSpark
+        sparkColor='#a855f7'
+        sparkSize={8}
+        sparkRadius={20}
+        sparkCount={6}
+        duration={500}
+      >
+        <HauntingIntro onComplete={handleHauntingComplete} />
+      </ClickSpark>
+    );
   }
 
   return (
-    <div className="min-h-screen max-h-screen overflow-hidden">
-      <GameHero 
-        playerStats={playerStats}
-        onStartStory={handleShowRoadmap}
-      />
-      
-      {showRoadmap && (
-        <QuantumRoadmap
-          onStartJourney={handleStartJourney}
-          onClose={handleCloseRoadmap}
-          playerProgress={progress}
+    <ClickSpark
+      sparkColor='#fff'
+      sparkSize={10}
+      sparkRadius={15}
+      sparkCount={8}
+      duration={400}
+    >
+      <div className="min-h-screen max-h-screen overflow-hidden">
+        <GameHero 
+          playerStats={playerStats}
+          onStartStory={handleShowRoadmap}
         />
-      )}
-    </div>
+        
+        {showRoadmap && (
+          <QuantumRoadmap
+            onStartJourney={handleStartJourney}
+            onClose={handleCloseRoadmap}
+            playerProgress={progress}
+          />
+        )}
+      </div>
+    </ClickSpark>
   );
 };
 
