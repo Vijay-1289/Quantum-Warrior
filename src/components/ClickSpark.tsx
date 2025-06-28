@@ -30,11 +30,12 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
 
   const createSparks = useCallback((clientX: number, clientY: number) => {
     const newSparks: Spark[] = [];
+    const timestamp = Date.now();
     
     for (let i = 0; i < sparkCount; i++) {
       const angle = (360 / sparkCount) * i;
       newSparks.push({
-        id: Date.now() + i,
+        id: timestamp + i,
         x: clientX,
         y: clientY,
         angle,
@@ -42,11 +43,13 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
       });
     }
     
-    setSparks(newSparks);
+    setSparks(prevSparks => [...prevSparks, ...newSparks]);
     
     // Remove sparks after animation duration
     setTimeout(() => {
-      setSparks([]);
+      setSparks(prevSparks => 
+        prevSparks.filter(spark => !newSparks.some(newSpark => newSpark.id === spark.id))
+      );
     }, duration);
   }, [sparkCount, sparkRadius, duration]);
 
@@ -77,24 +80,28 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
               height: sparkSize,
               backgroundColor: sparkColor,
               borderRadius: '50%',
-              animation: `sparkAnimation ${duration}ms ease-out forwards`,
-              transform: `translate(${translateX}px, ${translateY}px)`,
-            }}
+              animation: `sparkAnimation-${spark.id} ${duration}ms ease-out forwards`,
+              '--translate-x': `${translateX}px`,
+              '--translate-y': `${translateY}px`,
+              '--spark-radius': `${sparkRadius * 2}px`
+            } as React.CSSProperties & { '--translate-x': string; '--translate-y': string; '--spark-radius': string }}
           />
         );
       })}
       
       <style>{`
-        @keyframes sparkAnimation {
-          0% {
-            opacity: 1;
-            transform: scale(1) translate(0, 0);
+        ${sparks.map(spark => `
+          @keyframes sparkAnimation-${spark.id} {
+            0% {
+              opacity: 1;
+              transform: scale(1) translate(0, 0);
+            }
+            100% {
+              opacity: 0;
+              transform: scale(0.3) translate(var(--translate-x), var(--translate-y));
+            }
           }
-          100% {
-            opacity: 0;
-            transform: scale(0.3) translate(${sparkRadius * 2}px, ${sparkRadius * 2}px);
-          }
-        }
+        `).join('')}
       `}</style>
     </>
   );
