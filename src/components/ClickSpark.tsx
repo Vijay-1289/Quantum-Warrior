@@ -84,7 +84,7 @@ const ClickSpark: React.FC<ClickSparkProps> = ({
         );
       })}
       
-      <style jsx>{`
+      <style>{`
         @keyframes sparkAnimation {
           0% {
             opacity: 1;
